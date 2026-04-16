@@ -38,6 +38,9 @@ def login(user: UserLogin, db: Session = Depends(get_db)):
     if not db_user or not verify_password(user.password, db_user.password):
         raise HTTPException(status_code=400, detail="Invalid credentials")
 
+    if getattr(db_user, 'is_blocked', False):
+        raise HTTPException(status_code=403, detail="Your account has been suspended by the Administrator.")
+
     token = create_access_token({"sub": db_user.email})
 
     return {

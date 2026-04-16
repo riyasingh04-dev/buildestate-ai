@@ -66,6 +66,12 @@ def get_current_user(
     if user is None:
         raise credentials_exception
 
+    if getattr(user, 'is_blocked', False):
+        raise HTTPException(
+            status_code=403, 
+            detail="Your account has been suspended by the Administrator."
+        )
+
     return user
 
 

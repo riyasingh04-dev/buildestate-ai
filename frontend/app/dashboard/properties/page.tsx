@@ -18,10 +18,8 @@ const MyPropertiesPage = () => {
 
   const fetchMyProperties = async () => {
     try {
-      const response = await api.get('/properties/');
-      // Filter by current builder
-      const myProps = response.data.filter((p: any) => p.builder_id === user?.id);
-      setProperties(myProps);
+      const response = await api.get('/properties/me');
+      setProperties(response.data);
     } catch (error) {
       console.error('Error fetching my properties', error);
     } finally {

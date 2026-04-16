@@ -28,15 +28,21 @@ const Navbar = () => {
           <Link href="/about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
             About Us
           </Link>
+          <Link href="/terms" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Terms
+          </Link>
+          <Link href="/privacy" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+            Privacy
+          </Link>
         </div>
 
         <div className="flex items-center space-x-4">
           {user ? (
             <>
               <Link href={
-                user.role === 'admin' ? '/admin' : 
-                user.role === 'builder' ? '/dashboard' : 
-                '/user-dashboard'
+                user.role === 'admin' ? '/admin' :
+                  user.role === 'builder' ? '/dashboard' :
+                    '/user-dashboard'
               }>
                 <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                   <User className="h-4 w-4" />

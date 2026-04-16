@@ -46,6 +46,18 @@ def get_properties(
     
     return query.all()
 
+# GET MY PROPERTIES (Builder Only)
+@router.get("/me", response_model=List[PropertyResponse])
+def get_my_properties(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    if current_user.role != "builder":
+        raise HTTPException(status_code=403, detail="Only builders can view their properties here")
+    
+    properties = db.query(Property).filter(Property.builder_id == current_user.id).all()
+    return properties
+
 # GET SINGLE PROPERTY
 @router.get("/{property_id}", response_model=PropertyResponse)
 def get_property(property_id: int, db: Session = Depends(get_db)):
