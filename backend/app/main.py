@@ -29,7 +29,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 app.include_router(property.router, prefix="/properties", tags=["Properties"])
 app.include_router(lead.router, prefix="/leads", tags=["Leads"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
-app.include_router(ai.router, prefix="/ai/chat", tags=["AI"])
+app.include_router(ai.router, prefix="/ai", tags=["AI"])
 
 @app.get("/")
 def home():

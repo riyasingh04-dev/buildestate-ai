@@ -6,6 +6,9 @@ from app.models.property import Property
 from app.models.user import User
 from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyResponse
 from app.core.security import get_current_user
+from app.utils.embeddings import get_embedding, format_property_for_embedding
+from app.utils.pinecone_utils import upsert_property_embedding
+import json
 
 router = APIRouter()
 
@@ -26,6 +29,23 @@ def create_property(
     db.add(new_property)
     db.commit()
     db.refresh(new_property)
+
+    # Sync to Pinecone
+    try:
+        text_to_embed = format_property_for_embedding(new_property.title, new_property.description, new_property.amenities)
+        embedding = get_embedding(text_to_embed)
+        new_property.embedding_data = json.dumps(embedding)
+        db.commit()
+        
+        metadata = {
+            "title": new_property.title,
+            "location": new_property.location,
+            "price": float(new_property.price)
+        }
+        upsert_property_embedding(new_property.id, embedding, metadata)
+    except Exception as e:
+        print(f"Failed to sync to Pinecone: {e}")
+
     return new_property
 
 # GET ALL PROPERTIES (Public)
@@ -87,6 +107,23 @@ def update_property(
     
     db.commit()
     db.refresh(db_property)
+
+    # Sync to Pinecone
+    try:
+        text_to_embed = format_property_for_embedding(db_property.title, db_property.description, db_property.amenities)
+        embedding = get_embedding(text_to_embed)
+        db_property.embedding_data = json.dumps(embedding)
+        db.commit()
+        
+        metadata = {
+            "title": db_property.title,
+            "location": db_property.location,
+            "price": float(db_property.price)
+        }
+        upsert_property_embedding(db_property.id, embedding, metadata)
+    except Exception as e:
+        print(f"Failed to sync to Pinecone: {e}")
+
     return db_property
 
 # DELETE PROPERTY (Owner Only)

@@ -17,6 +17,8 @@ class Property(Base):
     status = Column(String, default="Available")
     admin_status = Column(String, default="pending")  # pending / approved / rejected
     image_url = Column(String, nullable=True)
+    amenities = Column(String, nullable=True)  # Comma-separated list
+    embedding_data = Column(String, nullable=True)  # JSON string or picklable object
     builder_id = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime, default=datetime.utcnow)
 

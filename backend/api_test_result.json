@@ -1,0 +1,54 @@
+{
+    "status_code": 200,
+    "response": {
+        "reply": "I found several properties that match your search for a \"serene getaway\". Here are the results:\n\n1. Sunset Villa - Located on Coastal Road, this 5-bedroom villa features a swimming pool, security, and parking. The price is 500,000 INR.\n2. Coral Reef Retreat - Located in Baa Atoll, Maldives, this 5-bedroom retreat features CCTV, a lift, and a gym. The price is 3,100,000 INR.\n3. Desert Mirage Estate - Located on Palm Jumeirah, Dubai, this 8-bedroom estate features a clubhouse, parking, and a garden. The price is 6,900,000 INR.\n4. Redwood Sanctuary - Located in Big Sur, California, this 4-bedroom sanctuary features a clubhouse, parking, and a garden. The price is 3,500,000 INR.\n5. Emerald Garden Villa - Located in Ubud, Bali, this 6-bedroom villa features security, a garden, and power backup. The price is 1,850,000 INR.\n\nIf you'd like to adjust your filters or view more properties, please let me know!",
+        "properties": [
+            {
+                "id": 1,
+                "title": "Sunset Villa",
+                "location": "Coastal Road",
+                "price": 500000.0,
+                "image_url": "https://plus.unsplash.com/premium_photo-1687960116228-13d383d20188?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                "bedrooms": 5,
+                "amenities": "Swimming Pool, Security, Parking"
+            },
+            {
+                "id": 6,
+                "title": "Coral Reef Retreat",
+                "location": "Baa Atoll, Maldives",
+                "price": 3100000.0,
+                "image_url": "https://media.istockphoto.com/id/1298306226/photo/young-woman-riding-bicycle-on-wooden-pier-in-the-maldives.jpg?s=1024x1024&w=is&k=20&c=zMBNDlofY4MZ7vDeu8D5nfYZsSx38BaNpfsmOLQL9cI=",
+                "bedrooms": 5,
+                "amenities": "CCTV, Lift, Gym"
+            },
+            {
+                "id": 8,
+                "title": "Desert Mirage Estate",
+                "location": "Palm Jumeirah, Dubai",
+                "price": 6900000.0,
+                "image_url": "https://images.unsplash.com/photo-1683495367970-a273ca3a5e9d?q=80&w=735&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                "bedrooms": 8,
+                "amenities": "Clubhouse, Parking, Garden"
+            },
+            {
+                "id": 9,
+                "title": "Redwood Sanctuary",
+                "location": "Big Sur, California",
+                "price": 3500000.0,
+                "image_url": "https://photos.zillowstatic.com/fp/0e4c973eea434c1c1e9affe70863970a-cc_ft_1536.jpg",
+                "bedrooms": 4,
+                "amenities": "Clubhouse, Parking, Garden"
+            },
+            {
+                "id": 3,
+                "title": "Emerald Garden Villa",
+                "location": "Ubud, Bali",
+                "price": 1850000.0,
+                "image_url": "https://images.unsplash.com/photo-1754377608302-354e9bf52734?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+                "bedrooms": 6,
+                "amenities": "Security, Garden, Power Backup"
+            }
+        ],
+        "session_id": "test_session"
+    }
+}

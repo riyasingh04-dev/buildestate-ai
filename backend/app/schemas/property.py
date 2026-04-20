@@ -12,6 +12,7 @@ class PropertyBase(BaseModel):
     area: float = 0.0
     status: str = "Available"
     image_url: Optional[str] = None
+    amenities: Optional[str] = None
 
 class PropertyCreate(PropertyBase):
     pass
@@ -26,6 +27,7 @@ class PropertyUpdate(BaseModel):
     area: Optional[float] = None
     status: Optional[str] = None
     image_url: Optional[str] = None
+    amenities: Optional[str] = None
 
 class PropertyResponse(PropertyBase):
     id: int
