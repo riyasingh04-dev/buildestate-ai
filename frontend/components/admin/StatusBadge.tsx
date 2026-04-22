@@ -16,6 +16,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'rejected':
       case 'blocked':
         return 'bg-rose-100 text-rose-700 border-rose-200';
+      case 'sold':
+        return 'bg-rose-600 text-white border-rose-700 font-bold px-3';
       case 'verified':
         return 'bg-blue-100 text-blue-700 border-blue-200';
       default:

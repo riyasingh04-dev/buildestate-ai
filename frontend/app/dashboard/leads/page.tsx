@@ -79,15 +79,17 @@ const LeadsPage = () => {
                           <User className="h-5 w-5" />
                         </div>
                         <div>
-                          <div className="font-bold text-foreground">{lead.user.name}</div>
+                          <div className="font-bold text-foreground">
+                            {lead.user?.name || lead.name || 'Unknown User'}
+                          </div>
                           <div className="text-xs text-muted-foreground flex items-center mt-0.5">
                             <Mail className="h-3 w-3 mr-1" />
-                            {lead.user.email}
+                            {lead.user?.email || lead.email || 'No Email'}
                           </div>
-                          {lead.user.phone && (
+                          {(lead.user?.phone || lead.phone) && (
                             <div className="text-xs text-muted-foreground flex items-center mt-0.5">
                               <Phone className="h-3 w-3 mr-1" />
-                              {lead.user.phone}
+                              {lead.user?.phone || lead.phone}
                             </div>
                           )}
                         </div>
@@ -96,7 +98,7 @@ const LeadsPage = () => {
                     <td className="px-8 py-6">
                       <div className="flex items-center font-medium">
                         <Building2 className="h-4 w-4 mr-2 text-accent" />
-                        {lead.property.title}
+                        {lead.property?.title || 'Unknown Property'}
                       </div>
                     </td>
                     <td className="px-8 py-6">

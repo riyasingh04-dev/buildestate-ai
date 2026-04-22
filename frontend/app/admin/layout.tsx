@@ -12,7 +12,8 @@ import {
   LogOut,
   Menu,
   X,
-  UserCheck
+  UserCheck,
+  TrendingUp
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -48,6 +49,7 @@ export default function AdminLayout({
     { label: 'Users', href: '/admin/users', icon: Users },
     { label: 'Builders', href: '/admin/builders', icon: UserCheck },
     { label: 'Properties', href: '/admin/properties', icon: Building2 },
+    { label: 'Leads', href: '/admin/leads', icon: TrendingUp },
   ];
 
   return (

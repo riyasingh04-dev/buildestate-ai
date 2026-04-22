@@ -23,8 +23,8 @@ const DashboardOverview = () => {
 
   const fetchStats = async () => {
     try {
-      const propRes = await api.get('/properties/');
-      const myProps = propRes.data.filter((p: any) => p.builder_id === user?.id);
+      const propRes = await api.get('/properties/me');
+      const myProps = propRes.data;
       
       const leadRes = await api.get('/leads/');
       

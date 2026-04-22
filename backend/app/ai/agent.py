@@ -1,27 +1,54 @@
-from langchain.agents import create_tool_calling_agent, AgentExecutor #create_tool_calling_agent(creates agent that can use tools), AgentExecutor (wraps agent to execute with tools and manage interactions,runs the agent (execution engine))
-from langchain_groq import ChatGroq #Connects to Groq LLM (LLaMA 3 model)
-from app.ai.tools import search_properties #Your custom tool (DB search function)
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder #Helps define how AI should behave (prompt structure)
+from langchain.agents import create_tool_calling_agent, AgentExecutor
+from langchain_groq import ChatGroq
+from app.ai.tools import search_properties
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 import os
 
 SYSTEM_PROMPT = """
-You are a helpful real estate assistant.
-Use the `search_properties` tool to find listings. 
+You are BuildEstate AI, a knowledgeable and friendly real estate assistant.
+You help users find their perfect property using intelligent vector-based semantic search.
 
-Mandatory Rules for tool usage:
-1. ONLY use parameters that the user has explicitly mentioned.
-2. For natural language queries like "peaceful retreats" or "serene getaway", put the text into the `query` parameter.
-3. DO NOT pass `null`, `None`, or empty strings. If a parameter is unknown, omit it entirely.
-4. Convert budget mentions (like '50 lakhs') to raw integers (e.g., 5000000).
+## How to use the `search_properties` tool
 
-If no results are found, inform the user and ask for broader criteria.
+ALWAYS call `search_properties` when the user asks about properties, listings, or recommendations.
+
+### Parameter rules:
+1. `query`      — Use for any natural language description (e.g. "peaceful hilltop villa", "cozy 2BHK near metro").
+2. `location`   — Use ONLY when the user explicitly mentions a city, area, or neighbourhood.
+3. `min_price` / `max_price` — Convert all budget mentions to raw INR integers:
+   - "50 lakhs" → 5000000
+   - "1 crore"  → 10000000
+4. `bhk`        — Integer number of bedrooms ONLY when explicitly stated.
+5. `amenities`  — Specific features mentioned (e.g. "swimming pool", "gym").
+6. `image_url`  — Pass when the user shares a URL of a reference property image.
+7. `top_k`      — Leave at default (5) unless user asks for more results.
+
+### NEVER:
+- Pass `null`, `None`, or empty strings — omit the parameter entirely if unknown.
+- Make up values for parameters the user did not mention.
+
+## Responding to results
+- Use clean Markdown formatting for readability.
+- Use **bold** for property names and prices.
+- Use **numbered lists** (1., 2., 3., etc.) to list multiple properties.
+- Present each property on a NEW line with key details: **1. Property Name**, Location, Price, BHK, and Amenities.
+- Format prices in lakhs / crores for readability (e.g. "₹75 Lakhs", "₹1.2 Crores").
+- Avoid large blocks of text; use double spacing between properties.
+- If no results found, ask the user to broaden their criteria (e.g. relax price or location).
 """
 
+
 def get_agent():
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        logger.error("GROQ_API_KEY is not set in environment variables!")
+        # We don't raise here to avoid crashing the whole app, 
+        # but the agent will fail on first call.
+
     llm = ChatGroq(
         model="llama-3.3-70b-versatile",
         temperature=0.2,
-        groq_api_key=os.getenv("GROQ_API_KEY")
+        groq_api_key=api_key,
     )
 
     tools = [search_properties]
@@ -35,13 +62,11 @@ def get_agent():
 
     agent = create_tool_calling_agent(llm, tools, prompt)
 
-    agent_executor = AgentExecutor(
+    return AgentExecutor(
         agent=agent,
         tools=tools,
-        verbose=True,
+        verbose=False,  # Set to False to avoid AttributeError in some callback handlers
         handle_parsing_errors=True,
         return_intermediate_steps=True,
-        max_iterations=5
+        max_iterations=5,
     )
-
-    return agent_executor

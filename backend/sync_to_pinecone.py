@@ -1,53 +1,71 @@
-# this file is used to sync all properties from database to pinecone (Vector DB) ,Take all properties from your database and upload them to Pinecone with embeddings
+"""
+sync_to_pinecone.py — Bulk sync script.
+
+Run manually to (re)index all properties into Pinecone.
+Skips properties already marked pinecone_synced=True unless --force is passed.
+
+Usage:
+    python sync_to_pinecone.py           # only un-synced properties
+    python sync_to_pinecone.py --force   # re-sync everything
+"""
+
 import os
-import json #store embeddings as string in DB convert string → list
+import sys
+import logging
 from dotenv import load_dotenv
-from app.db.database import SessionLocal #Creates database session (connection)
-from app.models.property import Property
-from app.models.user import User
-from app.models.lead import Lead
-from app.utils.embeddings import get_embedding, format_property_for_embedding #format_property_for_embedding() → convert property to textget_embedding() → convert text → vector
-from app.utils.pinecone_utils import upsert_property_embedding #sends data to pinecone
 
 load_dotenv()
 
-def sync(): #This function fetches all properties from your SQL database, converts them into vectors (embeddings), and uploads them to Pinecone.
-    print("Syncing properties to Pinecone...")
-    db = SessionLocal() #Creates database session (connection)  
-    properties = db.query(Property).all() #Fetches all properties from SQL database
-    
-    synced_count = 0 #Tracks how many properties have been synced
-    for p in properties: #Iterates through each property
-        # Generate or use existing embedding
-        embedding_list = None
-        if p.embedding_data: #If embedding already stored in DB
-            try:
-                embedding_list = json.loads(p.embedding_data) #convert string → list
-                if len(embedding_list) != 384: #Check if length is 384
-                    embedding_list = None
-            except: #If error occurs
-                embedding_list = None
-        
-        if not embedding_list: #If no embedding found
-            text_to_embed = format_property_for_embedding(p.title, p.description, p.amenities) #format_property_for_embedding() → convert property to text
-            embedding_list = get_embedding(text_to_embed) #get_embedding() → convert text → vector
-            # Update DB with JSON version
-            p.embedding_data = json.dumps(embedding_list)
-        
-        if embedding_list: #If embedding is found (either old or new)
-            metadata = {
-                "title": p.title, #Property title
-                "location": p.location, #Property location
-                "price": float(p.price) #Property price
-            }
-            upsert_property_embedding(p.id, embedding_list, metadata) #sends data to pinecone
-            synced_count += 1 #Increment synced count
-            if synced_count % 10 == 0: #Print every 10 properties
-                print(f"Synced {synced_count} properties...")
-    
-    db.commit()
-    db.close()
-    print(f"Successfully synced {synced_count} properties to Pinecone.")
+# Ensure app is importable
+sys.path.insert(0, os.path.dirname(__file__))
+
+from app.db import base  # registers all ORM models (User, Property, Lead, etc.)
+from app.db.database import SessionLocal
+from app.models.property import Property
+from app.services.pinecone_sync import sync_property_to_pinecone
+
+logging.basicConfig(level=logging.INFO, format="%(levelname)s | %(message)s")
+logger = logging.getLogger(__name__)
+
+
+def sync(force: bool = False) -> None:
+    logger.info("=== Pinecone Bulk Sync ===")
+    logger.info("Mode: %s", "FORCE (re-sync all)" if force else "DELTA (un-synced only)")
+
+    db = SessionLocal()
+    try:
+        if force:
+            properties = db.query(Property).all()
+        else:
+            properties = (
+                db.query(Property)
+                .filter(Property.pinecone_synced == False)  # noqa: E712
+                .all()
+            )
+
+        total = len(properties)
+        logger.info("Properties to sync: %d", total)
+
+        synced = 0
+        failed = 0
+
+        for i, prop in enumerate(properties, start=1):
+            ok = sync_property_to_pinecone(prop, db)
+            if ok:
+                synced += 1
+            else:
+                failed += 1
+                logger.warning("Failed to sync property ID=%d (%s)", prop.id, prop.title)
+
+            if i % 10 == 0:
+                logger.info("Progress: %d / %d", i, total)
+
+        logger.info("=== Done — synced=%d  failed=%d ===", synced, failed)
+
+    finally:
+        db.close()
+
 
 if __name__ == "__main__":
-    sync()
+    force_mode = "--force" in sys.argv
+    sync(force=force_mode)

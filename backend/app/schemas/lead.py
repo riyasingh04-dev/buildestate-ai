@@ -21,14 +21,20 @@ class PropertySummary(BaseModel):
 class LeadCreate(BaseModel):
     property_id: int
     message: Optional[str] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
 
 class LeadResponse(BaseModel):
     id: int
-    user_id: int
     property_id: int
+    user_id: Optional[int]
     message: Optional[str]
+    name: Optional[str] = None
+    email: Optional[str] = None
+    phone: Optional[str] = None
     created_at: datetime
-    user: UserSummary
+    user: Optional[UserSummary] = None
     property: PropertySummary
 
     class Config:

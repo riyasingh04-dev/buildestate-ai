@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { MessageCircle, X, Send, MapPin, IndianRupee } from "lucide-react";
 import Link from "next/link";
 import api from "@/services/api";
+import ReactMarkdown from "react-markdown";
 
 type Message = {
   id: string;
@@ -146,7 +147,11 @@ export default function Chatbot() {
                         : "bg-gray-100 dark:bg-zinc-800 text-gray-800 dark:text-gray-200 rounded-tl-none"
                     }`}
                   >
-                    {msg.content}
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <ReactMarkdown>
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
                   </div>
 
                   {/* Properties */}

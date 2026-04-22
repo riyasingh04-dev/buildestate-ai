@@ -96,7 +96,11 @@ const AdminPropertiesPage = () => {
               </div>
             </td>
             <td className="px-6 py-4">
-              <StatusBadge status={prop.admin_status || 'pending'} />
+              {prop.is_sold ? (
+                <StatusBadge status="sold" />
+              ) : (
+                <StatusBadge status={prop.admin_status || 'pending'} />
+              )}
             </td>
             <td className="px-6 py-4 text-right">
               <div className="flex items-center gap-2">

@@ -18,30 +18,29 @@ A modern, full-stack real estate platform that connects **property buyers** and 
 ## ✨ Core Features
 
 ### 🤖 Smart AI Real Estate Assistant
-* Powered by the cutting-edge **Groq Engine** (`llama-3.3-70b-versatile`).
-* Intercepts natural language and dynamically parses search intents (Price, Location, Budget).
-* Direct integration bypassing conventional search—returns beautifully rendered property cards right inside the chat sequence.
-* Employs Few-Shot Prompt engineering and Strict JSON outputs.
+* Powered by **Groq Engine** (`llama-3.3-70b-versatile`) and **Pinecone Vector Search**.
+* **Semantic Search:** Understands complex queries like "cozy 2BHK near a park with a swimming pool".
+* **Human-Readable Output:** Beautifully formatted responses using **React-Markdown** with numbered lists, bold text, and clear spacing.
+* **Property Cards:** Direct integration returns interactive property cards inside the chat.
 
 ### 🔐 Authentication & Security
-* JWT-based advanced authentication.
-* Secure password hashing with `bcrypt`.
-* Granular Role-Based Access Control (RBAC).
-* Strictly protected APIs—bypassing bypass flaws; blocked users instantly experience `403 Forbidden` limits across the whole app.
+* JWT-based advanced authentication with RBAC (Role-Based Access Control).
+* **Block System:** Suspended users/builders are strictly denied access platform-wide.
 
-### 🏠 Property Management
-* Add, update, and gracefully delete listings (Builders only).
-* Automatic status routing (`pending` approval system).
-* Dynamic search parameters filtering.
+### 🏠 Property Lifecycle
+* **Moderation:** Properties go through a `pending` -> `approved` workflow.
+* **Sold Status:** Properties can be marked as **Sold**, automatically restricting further purchases and updating platform-wide analytics.
+* **Auto-Sync:** Real-time synchronization of property data to Pinecone for instant search availability.
 
-### ❤️ Lead Generation System
-* Real-time intent capturing ("Interested" property markers).
-* Consolidated dashboards allowing builders to pinpoint qualified leads effortlessly.
+### ❤️ Intelligent Lead Management
+* **Anonymous Leads:** Captures name, email, and phone for non-logged-in users.
+* **Builder Dashboard:** Easy-to-use interface to manage incoming inquiries.
+* **Admin Global Monitoring:** Centralized access for administrators to monitor every lead generated across the platform.
 
-### 👑 Admin Control Panel
-* **User Management**: Ability to strictly suspend and block users/builders globally.
-* **Property Moderation**: Review pending properties, and authorize them to be listed publicly.
-* **Analytics**: Complete tracking of platform revenue, leads, and engagement metrics via Chart visualizations.
+### 👑 Admin Power Suite
+* **Comprehensive Stats:** Real-time tracking of revenue, property status, and user growth with interactive **Recharts** visualizations.
+* **Moderation Tools:** Approve listings, verify builders, and manage user status.
+* **Global Leads:** Monitor all potential buyer interactions across the ecosystem.
 
 ---
 
@@ -49,9 +48,9 @@ A modern, full-stack real estate platform that connects **property buyers** and 
 
 | Role | Permissions |
 | --- | --- |
-| 👤 **User** | Engage with the AI Chatbot, view properties, create leads. |
-| 👷 **Builder** | Add properties, review personal active/pending listings, track generated leads. |
-| 👑 **Admin** | Full system supervision, user suspensions, property approvals, data analytics. |
+| 👤 **User** | Semantic search via AI, view properties, create leads, and track personal interests. |
+| 👷 **Builder** | List properties, track active/pending listings, and manage incoming leads. |
+| 👑 **Admin** | Full ecosystem supervision, property moderation, global leads monitoring, and data analytics. |
 
 ---
 
@@ -59,40 +58,36 @@ A modern, full-stack real estate platform that connects **property buyers** and 
 
 ### 🔧 Backend Core
 * **Framework:** FastAPI
-* **Database:** PostgreSQL via SQLAlchemy
-* **AI Engine:** Groq API SDK
-* **Security:** JWT (python-jose), Passlib (bcrypt), Environment variables validation
+* **Database:** PostgreSQL (SQLAlchemy) & **Pinecone** (Vector Database)
+* **AI Engine:** Groq API & LangChain
+* **Embeddings:** HuggingFace / Google AI (Local Embeddings for Vector Search)
 
 ### 🎨 Frontend UI
 * **Framework:** Next.js 14+ (App Router)
-* **Styling:** Tailwind CSS & Glassmorphism Aesthetics
-* **Animations:** Framer Motion (Micro-animations, smooth toggles)
+* **Rendering:** **React-Markdown** for structured chatbot communication
+* **Animations:** Framer Motion
+* **Visualizations:** Recharts (Admin Dashboards)
 * **Icons:** Lucide React
-* **State/Fetch:** Axios interceptors
 
 ---
 
 ## ⚙️ Environment Setup
 
-Create a `.env` file inside the root directory and ensure they are appropriately formatted:
+Create a `.env` file inside the root directory:
 
 ```env
 # 🔐 JWT Config
-SECRET_KEY=your_super_secret_key_123456789
+SECRET_KEY=your_super_secret_key
 ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 # 🗄️ Database
 DATABASE_URL=postgresql://postgres:password@localhost:5432/realestate
 
-# 🤖 AI Engine
-GROQ_API_KEY=your_groq_api_key_here
-
-# 📧 SMTP (Optional)
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your_email@gmail.com
-SMTP_PASS=your_app_password
+# 🤖 AI & Search
+GROQ_API_KEY=your_groq_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_ENVIRONMENT=your_environment
+PINECONE_INDEX=your_index_name
 ```
 
 ⚠️ **Important:** Do NOT push the `.env` file to your GitHub repository.

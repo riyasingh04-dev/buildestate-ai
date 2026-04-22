@@ -80,11 +80,16 @@ class AdminService:
 
     @staticmethod
     def get_platform_stats(db: Session):
+        from app.models.purchase import Purchase
         total_users = db.query(User).count()
         total_builders = db.query(User).filter(User.role == "builder").count()
         total_buyers = db.query(User).filter(User.role == "user").count()
         total_properties = db.query(Property).count()
         total_leads = db.query(Lead).count()
+        
+        # Sales stats
+        total_sales = db.query(func.sum(Purchase.amount)).scalar() or 0
+        sold_properties = db.query(Property).filter(Property.is_sold == True).count()
 
         # Property moderation status breakdown
         approved = db.query(Property).filter(Property.admin_status == "approved").count()
@@ -110,6 +115,14 @@ class AdminService:
             .all()
         )
         props_by_day = {row.day: row.count for row in props_by_day_rows}
+        
+        # Group purchases by day
+        purchases_by_day_rows = (
+            db.query(cast(Purchase.created_at, Date).label("day"), func.count().label("count"))
+            .group_by(cast(Purchase.created_at, Date))
+            .all()
+        )
+        purchases_by_day = {row.day: row.count for row in purchases_by_day_rows}
 
         # Build unified timeline
         activity_trend = []
@@ -118,6 +131,7 @@ class AdminService:
                 "date": day.strftime("%d %b"),
                 "leads": leads_by_day.get(day, 0),
                 "properties": props_by_day.get(day, 0),
+                "sales": purchases_by_day.get(day, 0),
             })
 
         return {
@@ -126,10 +140,13 @@ class AdminService:
             "total_buyers": total_buyers,
             "total_properties": total_properties,
             "total_leads": total_leads,
+            "total_revenue": total_sales,
+            "sold_count": sold_properties,
             "property_status_breakdown": [
-                {"name": "Approved", "value": approved},
+                {"name": "Approved", "value": max(0, approved - sold_properties)},
                 {"name": "Pending", "value": pending},
                 {"name": "Rejected", "value": rejected},
+                {"name": "Sold", "value": sold_properties},
             ],
             "user_role_breakdown": [
                 {"name": "Buyers", "value": total_buyers},
@@ -137,3 +154,7 @@ class AdminService:
             ],
             "activity_trend": activity_trend,
         }
+
+    @staticmethod
+    def get_all_leads_admin(db: Session):
+        return db.query(Lead).all()

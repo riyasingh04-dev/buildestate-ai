@@ -13,6 +13,7 @@ class PropertyBase(BaseModel):
     status: str = "Available"
     image_url: Optional[str] = None
     amenities: Optional[str] = None
+    is_sold: bool = False
 
 class PropertyCreate(PropertyBase):
     pass
@@ -34,6 +35,7 @@ class PropertyResponse(PropertyBase):
     builder_id: int
     admin_status: str = "pending"
     created_at: datetime
+    is_purchased: Optional[bool] = False
 
     class Config:
         from_attributes = True

@@ -6,6 +6,7 @@ from app.core.security import require_admin
 from app.models.user import User
 from app.schemas.user import UserOut
 from app.schemas.property import PropertyResponse
+from app.schemas.lead import LeadResponse
 from app.services.admin_service import AdminService
 
 router = APIRouter()
@@ -61,3 +62,8 @@ def reject_property(property_id: int, db: Session = Depends(get_db), admin: User
 @router.delete("/properties/{property_id}")
 def delete_property_admin(property_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return AdminService.delete_property_admin(db, property_id)
+
+# LEAD MANAGEMENT
+@router.get("/leads", response_model=List[LeadResponse])
+def get_leads_admin(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    return AdminService.get_all_leads_admin(db)

@@ -10,7 +10,7 @@ import {
   AreaChart, Area
 } from 'recharts';
 
-const COLORS_PIE = ['#10b981', '#f59e0b', '#f43f5e'];
+const COLORS_PIE = ['#10b981', '#f59e0b', '#f43f5e', '#b910a0ff']; // Added Rose for Sold
 const COLORS_BAR = ['#6366f1', '#0ea5e9'];
 
 
@@ -72,9 +72,9 @@ const AdminDashboard = () => {
 
   const statCards = [
     { title: 'Total Users', value: stats?.total_users || 0, icon: Users, color: 'text-blue-600', bgColor: 'bg-blue-50' },
-    { title: 'Total Builders', value: stats?.total_builders || 0, icon: Handshake, color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
     { title: 'Total Properties', value: stats?.total_properties || 0, icon: Building2, color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
     { title: 'Total Leads', value: stats?.total_leads || 0, icon: TrendingUp, color: 'text-violet-600', bgColor: 'bg-violet-50' },
+    { title: 'Total Sales', value: `$${(stats?.total_revenue || 0).toLocaleString()}`, icon: ShieldCheck, color: 'text-rose-600', bgColor: 'bg-rose-50' },
   ];
 
   return (
@@ -173,6 +173,7 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-4 text-xs font-semibold text-slate-400">
             <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-full bg-violet-500"></span>Leads</span>
             <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-full bg-blue-400"></span>Properties</span>
+            <span className="flex items-center gap-1.5"><span className="inline-block w-3 h-3 rounded-full bg-rose-500"></span>Sales</span>
           </div>
         </div>
         <ResponsiveContainer width="100%" height={280}>
@@ -186,6 +187,10 @@ const AdminDashboard = () => {
                 <stop offset="5%" stopColor="#38bdf8" stopOpacity={0.2} />
                 <stop offset="95%" stopColor="#38bdf8" stopOpacity={0} />
               </linearGradient>
+              <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2} />
+                <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
             <XAxis dataKey="date" tick={{ fontSize: 13, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -193,6 +198,7 @@ const AdminDashboard = () => {
             <Tooltip content={<CustomTooltipArea />} />
             <Area type="monotone" dataKey="leads" stroke="#8b5cf6" strokeWidth={2.5} fill="url(#leadsGrad)" dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 0 }} />
             <Area type="monotone" dataKey="properties" stroke="#38bdf8" strokeWidth={2.5} fill="url(#propsGrad)" dot={{ r: 4, fill: '#38bdf8', strokeWidth: 0 }} />
+            <Area type="monotone" dataKey="sales" stroke="#f43f5e" strokeWidth={2.5} fill="url(#salesGrad)" dot={{ r: 4, fill: '#f43f5e', strokeWidth: 0 }} />
           </AreaChart>
         </ResponsiveContainer>
       </div>

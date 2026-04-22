@@ -20,6 +20,9 @@ const adminApi = {
   approveProperty: (id: number) => api.patch(`/admin/properties/${id}/approve`),
   rejectProperty: (id: number) => api.patch(`/admin/properties/${id}/reject`),
   deleteProperty: (id: number) => api.delete(`/admin/properties/${id}`),
+  
+  // Leads
+  getLeads: () => api.get('/admin/leads'),
 };
 
 export default adminApi;
