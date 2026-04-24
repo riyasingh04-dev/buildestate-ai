@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Routes
-from app.routes import auth, property, lead, admin, ai, purchase
+from app.routes import auth, property, lead, admin, ai, purchase, ml
 
 # DB
 from app.db.database import engine, Base
@@ -48,6 +48,7 @@ app.include_router(lead.router,     prefix="/leads",      tags=["Leads"])
 app.include_router(admin.router,    prefix="/admin",      tags=["Admin"])
 app.include_router(ai.router,       prefix="/ai",         tags=["AI"])
 app.include_router(purchase.router, prefix="/purchases",  tags=["Purchases"])
+app.include_router(ml.router,       prefix="/ml",         tags=["ML"])
 
 # Multimodal search endpoint
 from app.routes import search as search_router

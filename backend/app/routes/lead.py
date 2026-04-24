@@ -7,6 +7,7 @@ from app.db.database import get_db
 from app.models.lead import Lead
 from app.models.property import Property
 from app.models.user import User
+from app.models.user_interaction import UserInteraction
 from app.schemas.lead import LeadCreate, LeadResponse
 from app.core.security import get_current_user, SECRET_KEY, ALGORITHM
 
@@ -51,6 +52,16 @@ def create_lead(
         phone=current_user.phone if current_user else lead_in.phone
     )
     db.add(new_lead)
+    
+    # ── Track Interaction ──────────────────────────────────────────────────
+    if current_user:
+        interaction = UserInteraction(
+            user_id=current_user.id,
+            property_id=new_lead.property_id,
+            action="lead"
+        )
+        db.add(interaction)
+
     db.commit()
     db.refresh(new_lead)
     return new_lead

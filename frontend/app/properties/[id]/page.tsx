@@ -27,7 +27,18 @@ const PropertyDetailPage = () => {
   useEffect(() => {
     fetchProperty();
     checkExistingInterest();
+    if (user && id) {
+      trackView();
+    }
   }, [id, user]);
+
+  const trackView = async () => {
+    try {
+      await api.post('/ml/interact', { property_id: parseInt(id as string), action: 'view' });
+    } catch (error) {
+      console.error('Failed to track view', error);
+    }
+  };
 
   const fetchProperty = async () => {
     setLoading(true);

@@ -12,11 +12,14 @@ interface PropertyCardProps {
   image_url?: string;
   is_sold?: boolean;
   status?: string;
+  onInteraction?: (action: 'view' | 'click') => void;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location, description, image_url, is_sold, status }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location, description, image_url, is_sold, status, onInteraction }) => {
   const defaultImage = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop";
   const showSold = is_sold || status?.toLowerCase() === 'sold';
+
+  // Removed auto-interaction on mount to prevent 'view' leak in lists
   
   return (
     <div className={`group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-xl hover:shadow-primary/5 ${showSold ? 'opacity-90' : ''}`}>
@@ -53,7 +56,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location,
           {description}
         </p>
 
-        <Link href={`/properties/${id}`}>
+        <Link href={`/properties/${id}`} onClick={() => onInteraction && onInteraction('click')}>
           <Button variant="outline" className="w-full group/btn">
             View Details
             <ArrowUpRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1" />

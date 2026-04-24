@@ -5,7 +5,7 @@ from typing import List, Optional
 from app.db.database import get_db
 from app.models.property import Property
 from app.models.user import User
-from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyResponse
+from app.schemas.property import PropertyCreate, PropertyUpdate, PropertyResponse, PropertyPaginationResponse
 from app.core.security import get_current_user
 from app.models.purchase import Purchase
 from app.routes.lead import get_optional_user
@@ -46,12 +46,14 @@ def create_property(
 # ─────────────────────────────────────────────────────────────────────────────
 # GET ALL PROPERTIES  (Public)
 # ─────────────────────────────────────────────────────────────────────────────
-@router.get("/", response_model=List[PropertyResponse])
+@router.get("/", response_model=PropertyPaginationResponse)
 def get_properties(
     db: Session = Depends(get_db),
     min_price: Optional[float] = None,
     max_price: Optional[float] = None,
     location: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 12,
 ):
     query = db.query(Property).filter(Property.admin_status == "approved")
     if min_price:
@@ -60,7 +62,16 @@ def get_properties(
         query = query.filter(Property.price <= max_price)
     if location:
         query = query.filter(Property.location.ilike(f"%{location}%"))
-    return query.all()
+        
+    total = query.count()
+    properties = query.offset(skip).limit(limit).all()
+    
+    return {
+        "total": total,
+        "properties": properties,
+        "skip": skip,
+        "limit": limit
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────

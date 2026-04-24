@@ -30,6 +30,8 @@ class PropertyUpdate(BaseModel):
     image_url: Optional[str] = None
     amenities: Optional[str] = None
 
+from typing import List, Optional
+
 class PropertyResponse(PropertyBase):
     id: int
     builder_id: int
@@ -39,3 +41,9 @@ class PropertyResponse(PropertyBase):
 
     class Config:
         from_attributes = True
+
+class PropertyPaginationResponse(BaseModel):
+    total: int
+    properties: List[PropertyResponse]
+    skip: int
+    limit: int
