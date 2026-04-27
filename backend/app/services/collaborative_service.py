@@ -1,89 +1,124 @@
-import pandas as pd #Used for data manipulation and matrix operations.
-import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity#used to compute similarity between properties.
-from sqlalchemy.orm import Session#Used to interact with your database.
-from app.models.user_interaction import UserInteraction #ORM models for fetching interaction data 
-from app.models.property import Property#ORM models for fetching property details.
-from typing import List, Dict#typehints for better code clarity and error checking.
-import logging
+import pandas as pd#Used to manipulate dataframes
+import numpy as np #Used for numerical operations
+from sklearn.metrics.pairwise import cosine_similarity #Used to calculate cosine similarity
+from sqlalchemy.orm import Session #Used for database sessions
+from app.models.user_interaction import UserInteraction #Used to interact with user_interactions table
+from app.models.property import Property #Used to interact with property table
+from typing import List, Dict, Optional#Used to specify types of variables
+import logging #Used for logging
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)#Used to log messages
 
-class CollaborativeService:#Service layer where collaborative filtering logic lives.
+
+def _build_entity_id(user_id: Optional[int], session_id: Optional[str]) -> Optional[str]:#Used to create a unified identifier for the user-item matrix
+    """
+    Creates a unified identifier for the user-item matrix.
+    Logged-in users:   'u_123'
+    Anonymous sessions: 's_abc-xyz'
+    """
+    if user_id:
+        return f"u_{user_id}"
+    if session_id:
+        return f"s_{session_id}"
+    return None
+
+
+class CollaborativeService:# Used for collaborative filtering
+
     @staticmethod
-    def get_collaborative_recommendations(db: Session, user_id: int, top_n: int = 5) -> List[Dict]:
+    def _build_user_item_matrix(interactions: list):#Used to build a user-item matrix
         """
-        Generates item-based collaborative filtering recommendations.
-        1. Builds user-item matrix from DB interactions.
-        2. Calculates property similarity using cosine similarity.
-        3. Predicts user preference for unseen properties.
+        Converts raw interactions into a weighted user-item pivot matrix
+        using a unified entity_id for both users and sessions.
         """
+        weights = {"view": 1, "click": 2, "lead": 3}
+
+        data = []
+        for i in interactions:
+            entity_id = _build_entity_id(i.user_id, i.session_id)
+            if entity_id is None:
+                continue
+            data.append({
+                "entity_id": entity_id,
+                "property_id": i.property_id,
+                "score": weights.get(i.action, 1)
+            })
+
+        if not data:
+            return None, None
+
+        df = pd.DataFrame(data)
+        # Keep highest intent action per entity-property pair
+        df = df.groupby(["entity_id", "property_id"])["score"].max().reset_index()
+
+        matrix = df.pivot(
+            index="entity_id", columns="property_id", values="score"
+        ).fillna(0)
+
+        return matrix, df
+
+    @staticmethod
+    def get_collaborative_recommendations(#Used to get recommendations based on collaborative filtering
+        db: Session,
+        top_n: int = 5,
+        user_id: Optional[int] = None,
+        session_id: Optional[str] = None,
+    ) -> List[Dict]: #Used to get recommendations based on collaborative filtering
+        """
+        Item-based collaborative filtering for any entity (user or session).
+        1. Builds a unified user-item matrix.
+        2. Computes item-item cosine similarity.
+        3. Scores unseen properties for the entity.
+        """
+        entity_id = _build_entity_id(user_id, session_id)#Used to create a unified identifier for the user-item matrix
+        if not entity_id:
+            logger.warning("No entity_id provided for collaborative filtering.")
+            return []
+
         try:
-            # 1. Fetch Interactions from DB
-            interactions = db.query(UserInteraction).all() #Pull all user activity (view, click, lead)
+            interactions = db.query(UserInteraction).all()
             if not interactions:
                 logger.info("No interactions found for collaborative filtering.")
                 return []
 
-            # 2. Prepare Data Structure (convert db data to tabular format for matrix operations)
-            data = [
-                {"user_id": i.user_id, "property_id": i.property_id, "action": i.action}
-                for i in interactions
-            ]
-            df = pd.DataFrame(data)
-
-            # 3. Apply Interaction Weights
-            weights = {"view": 1, "click": 2, "lead": 3}
-            df['score'] = df['action'].map(weights)
-
-            # Handle duplicate interactions (take the highest intent action)
-            #If user interacted multiple times:Keep highest intent action
-            df = df.groupby(['user_id', 'property_id'])['score'].max().reset_index()
-
-            # 4. Create User-Item Pivot Table
-            # Rows = Users, Columns = Properties
-            user_item_matrix = df.pivot(index='user_id', columns='property_id', values='score').fillna(0)
-
-            # 5. Cold Start Check: If user has no interactions : Can't compute similarity, return empty list so UI can hide the section
-            if user_id not in user_item_matrix.index:
-                logger.info(f"User {user_id} is a cold start user for collaborative filtering.")
+            user_item_matrix, _ = CollaborativeService._build_user_item_matrix(interactions)
+            if user_item_matrix is None:
                 return []
 
-            # 6. Compute Item-Item Similarity Matrix
-            # Using Cosine Similarity on the transposed matrix (Properties as rows)
+            # Cold-start: entity not in matrix yet
+            if entity_id not in user_item_matrix.index:
+                logger.info(f"Entity '{entity_id}' not in interaction matrix (cold start).")
+                return []
+
+            # Item-item similarity on transposed matrix (items as rows)
             item_sim_matrix = cosine_similarity(user_item_matrix.T)
             item_sim_df = pd.DataFrame(
-                item_sim_matrix, 
-                index=user_item_matrix.columns, 
+                item_sim_matrix,
+                index=user_item_matrix.columns,
                 columns=user_item_matrix.columns
             )
 
-            # 7. Generate Scores for Target User
-            user_ratings = user_item_matrix.loc[user_id]
-            interacted_ids = user_ratings[user_ratings > 0].index.tolist()
-            
-            # Dot product of similarities and user ratings gives the raw score
-            # Divide by sum of similarities for normalization
-            sim_sum = item_sim_df.sum(axis=1)
-            # Avoid division by zero
-            sim_sum = sim_sum.replace(0, 1)
-            
-            user_scores = item_sim_df.dot(user_ratings) / sim_sum
-            
-            # 8. Filter and Rank
-            # Remove properties the user has already interacted with
-            recommendations = user_scores.drop(index=interacted_ids).sort_values(ascending=False)
+            entity_ratings = user_item_matrix.loc[entity_id]
+            interacted_ids = entity_ratings[entity_ratings > 0].index.tolist()
 
-            # 9. Retrieve Metadata and return top N
+            # Weighted sum of similarities normalized by similarity totals
+            sim_sum = item_sim_df.sum(axis=1).replace(0, 1)
+            entity_scores = item_sim_df.dot(entity_ratings) / sim_sum
+
+            # Remove already-seen properties
+            recommendations = entity_scores.drop(
+                index=[pid for pid in interacted_ids if pid in entity_scores.index]
+            ).sort_values(ascending=False)
+
             top_ids = recommendations.head(top_n).index.tolist()
             final_output = []
-            
             for pid in top_ids:
                 prop = db.query(Property).filter(Property.id == pid).first()
                 if prop:
                     final_output.append({
                         "property_id": prop.id,
-                        "score": round(float(user_scores[pid]), 4),
+                        "score": round(float(entity_scores[pid]), 4),
+                        "source": "collaborative",
                         "metadata": {
                             "title": prop.title,
                             "location": prop.location,
@@ -91,9 +126,9 @@ class CollaborativeService:#Service layer where collaborative filtering logic li
                             "image_url": prop.image_url
                         }
                     })
-            
+
             return final_output
 
         except Exception as e:
-            logger.error(f"Error in collaborative filtering: {e}")
+            logger.error(f"Error in collaborative filtering for entity '{entity_id}': {e}")
             return []

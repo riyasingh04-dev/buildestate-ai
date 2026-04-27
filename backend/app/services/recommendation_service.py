@@ -18,28 +18,48 @@ ACTION_WEIGHTS = { #Defines importance of actions
 
 class RecommendationService:#Recommendation logic lives here
     @staticmethod
-    async def track_interaction(db: Session, user_id: int, property_id: int, action: str): #Tracking user interactions
+    async def track_interaction(
+        db: Session,
+        property_id: int,
+        action: str,
+        user_id: Optional[int] = None,
+        session_id: Optional[str] = None
+    ):
+        """Track interaction for both logged-in (user_id) and anonymous (session_id) users."""
+        if user_id is None and session_id is None:
+            raise ValueError("Either user_id or session_id must be provided.")
+        
         interaction = UserInteraction(
             user_id=user_id,
+            session_id=session_id,
             property_id=property_id,
             action=action
         )
-        db.add(interaction) #save to db
+        db.add(interaction)
         db.commit()
         db.refresh(interaction)
         return interaction
 
     @staticmethod
     async def get_recommendations(
-        db: Session, 
-        user_id: int, 
+        db: Session,
         top_k: int = 5,
+        user_id: Optional[int] = None,
+        session_id: Optional[str] = None,
         location: Optional[str] = None,
         min_price: Optional[float] = None,
         max_price: Optional[float] = None,
     ):
-        # 1. Fetch user interactions (Get all user activity)
-        interactions = db.query(UserInteraction).filter(UserInteraction.user_id == user_id).all()
+        # 1. Fetch user interactions for this entity (user or session)
+        query = db.query(UserInteraction)
+        if user_id:
+            query = query.filter(UserInteraction.user_id == user_id)
+        elif session_id:
+            query = query.filter(UserInteraction.session_id == session_id)
+        else:
+            return []
+
+        interactions = query.all()
         
         # If no history, return empty list so UI can hide the section
         if not interactions or len(interactions) < 1:

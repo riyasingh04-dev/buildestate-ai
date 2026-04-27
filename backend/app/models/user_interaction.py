@@ -3,14 +3,15 @@ from sqlalchemy.orm import relationship#Used to define relationships between tab
 from datetime import datetime #Used to store timestamp
 from app.db.database import Base #Used to define the base class for all models
 
-class UserInteraction(Base):#creating a table model for user interactions
-    __tablename__ = "user_interactions"#table name
+class UserInteraction(Base):
+    __tablename__ = "user_interactions"
 
-    id = Column(Integer, primary_key=True, index=True)#primary key
-    user_id = Column(Integer, ForeignKey("users.id"))#foreign key to user table
-    property_id = Column(Integer, ForeignKey("properties.id"))#foreign key to property table
-    action = Column(String)  # view, click, lead (Important for ml weightings)
-    timestamp = Column(DateTime, default=datetime.utcnow)#default timestamp
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Optional user ID
+    session_id = Column(String, index=True, nullable=True) # Anonymous session ID
+    property_id = Column(Integer, ForeignKey("properties.id"))
+    action = Column(String)  # view, click, lead
+    timestamp = Column(DateTime, default=datetime.utcnow)
 
-    user = relationship("User")#relationship to user table
-    property = relationship("Property")#relationship to property table
+    user = relationship("User")
+    property = relationship("Property")

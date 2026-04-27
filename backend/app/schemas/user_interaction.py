@@ -3,21 +3,23 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Dict
 
-class UserInteractionBase(BaseModel):#Base model for user interaction
-    property_id: int #input fields for frontend to send data to backend
+class UserInteractionBase(BaseModel):
+    property_id: int
     action: str  # view, click, lead
+    session_id: Optional[str] = None # For anonymous users
 
-class UserInteractionCreate(UserInteractionBase):#Creating a schema for user interaction to validate data coming from frontend to backend
-    pass#Used for POST request,Inherits base fields
+class UserInteractionCreate(UserInteractionBase):
+    pass
 
-class UserInteractionResponse(UserInteractionBase):#Creating a schema for user interaction response,sending data from backend to frontend(Used for API response)
+class UserInteractionResponse(UserInteractionBase):
     id: int
-    user_id: int
+    user_id: Optional[int] = None
     timestamp: datetime
 
-    class Config:#Config class used for ORM mapping(Converts SQLAlchemy model → Pydantic response)
+    class Config:
         from_attributes = True
 
-class RecommendationResponse(BaseModel):#Creating a schema for recommendation response
-    user_id: int
-    recommendations: List[Dict]#list of dictionaries containing recommended properties
+class RecommendationResponse(BaseModel):
+    user_id: Optional[int] = None
+    session_id: Optional[str] = None
+    recommendations: List[Dict]

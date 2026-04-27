@@ -3,18 +3,18 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/services/api';
 import PropertyCard from '@/components/PropertyCard';
-import { Search, MapPin, DollarSign, Filter, Building2, LayoutGrid, Sparkles, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, MapPin, DollarSign, Filter, Building2, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
 
 export default function Home() {
-  const { user } = useAuth();
+  const { user, getSessionId } = useAuth();
   const [properties, setProperties] = useState([]);
   const [totalProperties, setTotalProperties] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const propertiesPerPage = 12;
-  const [recommendations, setRecommendations] = useState([]);
-  const [collabRecommendations, setCollabRecommendations] = useState([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recStrategy, setRecStrategy] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [recsLoading, setRecsLoading] = useState(false);
   const [filters, setFilters] = useState({
@@ -25,20 +25,28 @@ export default function Home() {
 
   useEffect(() => {
     fetchProperties(currentPage);
-    if (user) {
-      fetchRecommendations();
-      fetchCollaborativeRecommendations();
-    }
+    fetchRecommendations();
   }, [user, currentPage]);
 
   const fetchRecommendations = async () => {
     setRecsLoading(true);
     try {
-      const response = await api.get(`/ml/recommendations/${user?.id}`);
-      setRecommendations(response.data.recommendations.map((r: any) => ({
-        id: r.property_id,
-        ...r.metadata
-      })));
+      const sessionId = getSessionId();
+      // Build query params — send session_id for anonymous, user_id resolved by token on server
+      const params = new URLSearchParams();
+      if (!user && sessionId) params.append('session_id', sessionId);
+
+      const response = await api.get(`/ml/recommendations?${params.toString()}`);
+      const data = response.data;
+      setRecStrategy(data.strategy || '');
+      setRecommendations(
+        (data.recommendations || []).map((r: any) => ({
+          id: r.property_id,
+          score: r.score,
+          source: r.source,
+          ...r.metadata,
+        }))
+      );
     } catch (error) {
       console.error('Error fetching recommendations', error);
     } finally {
@@ -46,22 +54,15 @@ export default function Home() {
     }
   };
 
-  const fetchCollaborativeRecommendations = async () => {
-    try {
-      const response = await api.get(`/ml/collaborative/${user?.id}`);
-      setCollabRecommendations(response.data.recommendations.map((r: any) => ({
-        id: r.property_id,
-        ...r.metadata
-      })));
-    } catch (error) {
-      console.error('Error fetching collaborative recommendations', error);
-    }
-  };
-
   const trackInteraction = async (propertyId: number, action: 'view' | 'click') => {
-    if (!user) return;
     try {
-      await api.post('/ml/interact', { property_id: propertyId, action });
+      const sessionId = getSessionId();
+      await api.post('/ml/interact', {
+        property_id: propertyId,
+        action,
+        // session_id is ignored by backend if user is logged in
+        session_id: user ? undefined : sessionId,
+      });
     } catch (error) {
       console.error('Failed to track interaction', error);
     }
@@ -163,52 +164,57 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Content-Based Recommendations Section */}
-      {user && recommendations.length > 0 && (
+      {/* Unified Recommendations Section — shown for ALL users */}
+      {recommendations.length > 0 && (
         <section className="bg-slate-50 border-y border-slate-200">
           <div className="container mx-auto px-4 py-16">
-            <div className="mb-8">
-              <div className="mb-2 flex items-center space-x-2 text-indigo-600 font-bold tracking-widest uppercase text-xs">
-                <Sparkles className="h-4 w-4" />
-                <span>Based on your activity</span>
+            <div className="mb-8 flex items-start justify-between">
+              <div>
+                <div className="mb-2 flex items-center space-x-2 text-indigo-600 font-bold tracking-widest uppercase text-xs">
+                  {recStrategy === 'trending' ? (
+                    <TrendingUp className="h-4 w-4" />
+                  ) : (
+                    <Sparkles className="h-4 w-4" />
+                  )}
+                  <span>
+                    {recStrategy === 'trending' && 'Trending Now'}
+                    {recStrategy === 'content-based' && 'Based on Your Activity'}
+                    {recStrategy === 'hybrid' && 'Personalized for You'}
+                  </span>
+                </div>
+                <h2 className="text-3xl font-bold text-foreground tracking-tight">
+                  {recStrategy === 'trending' ? 'Popular Properties' : 'Recommended for You'}
+                </h2>
+                {!user && recStrategy !== 'trending' && (
+                  <p className="mt-1 text-sm text-muted-foreground">Browsing anonymously — <a href="/login" className="text-primary underline">log in</a> to unlock full personalization.</p>
+                )}
               </div>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">Recommended for You</h2>
+              {/* Strategy badge */}
+              <span className="hidden md:inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100">
+                <Sparkles className="h-3 w-3" />
+                {recStrategy === 'hybrid' ? `Hybrid · ${recsLoading ? '…' : recommendations.length} picks` :
+                  recStrategy === 'content-based' ? 'Content-Based' :
+                  'Trending'}
+              </span>
             </div>
-            
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {recommendations.map((prop: any) => (
-                <PropertyCard 
-                  key={prop.id} 
-                  {...prop} 
-                  onInteraction={(action) => trackInteraction(prop.id, action)} 
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
 
-      {/* Collaborative Filtering Section */}
-      {user && collabRecommendations.length > 0 && (
-        <section className="bg-white border-b border-slate-200">
-          <div className="container mx-auto px-4 py-16">
-            <div className="mb-8">
-              <div className="mb-2 flex items-center space-x-2 text-accent font-bold tracking-widest uppercase text-xs">
-                <Building2 className="h-4 w-4" />
-                <span>Users like you also liked</span>
+            {recsLoading ? (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {[1, 2, 3].map((n) => (
+                  <div key={n} className="h-[400px] w-full animate-pulse rounded-2xl bg-muted" />
+                ))}
               </div>
-              <h2 className="text-3xl font-bold text-foreground tracking-tight">Popular with Similar Buyers</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {collabRecommendations.map((prop: any) => (
-                <PropertyCard 
-                  key={prop.id} 
-                  {...prop} 
-                  onInteraction={(action) => trackInteraction(prop.id, action)} 
-                />
-              ))}
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+                {recommendations.map((prop: any) => (
+                  <PropertyCard
+                    key={prop.id}
+                    {...prop}
+                    onInteraction={(action) => trackInteraction(prop.id, action)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       )}
