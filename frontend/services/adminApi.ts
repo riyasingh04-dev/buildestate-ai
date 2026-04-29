@@ -23,6 +23,8 @@ const adminApi = {
   
   // Leads
   getLeads: () => api.get('/admin/leads'),
+  getLeadDetails: (id: number) => api.get(`/admin/leads/${id}/details`),
+  convertLead: (id: number) => api.post(`/admin/leads/${id}/convert`),
 };
 
 export default adminApi;

@@ -8,6 +8,9 @@ from app.services.hybrid_service import HybridService
 from app.schemas.user_interaction import UserInteractionCreate, UserInteractionResponse, RecommendationResponse
 from app.core.security import get_current_user, get_optional_user
 from app.models.user import User
+from app.models.lead import Lead
+from app.services.lead_scoring_service import LeadScoringService
+from app.schemas.lead import LeadScoreResponse
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -165,3 +168,47 @@ async def merge_session(
         "message": f"Merged {merged_count} anonymous interaction(s) into your account.",
         "merged_count": merged_count,
     }
+
+# ─── Lead Scoring Endpoints ───────────────────────────────────────────────────
+
+@router.post("/predict-lead-score/{lead_id}", response_model=LeadScoreResponse)
+async def predict_lead_score(
+    lead_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Predict conversion probability for a specific lead.
+    """
+    if current_user.role not in ["admin", "builder"]:
+        raise HTTPException(status_code=403, detail="Only admins and builders can score leads.")
+
+    result = LeadScoringService.predict_score(db, lead_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Lead not found.")
+
+    # Optionally store the score in the database
+    lead = db.query(Lead).filter(Lead.id == lead_id).first()
+    if lead:
+        lead.lead_score = result["conversion_probability"]
+        lead.lead_category = result["lead_category"]
+        db.commit()
+
+    return result
+
+@router.post("/train-lead-model")
+async def train_lead_model(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Trigger retraining of the Lead Scoring XGBoost model.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can retrain the model.")
+
+    success = LeadScoringService.train_model(db)
+    if not success:
+        raise HTTPException(status_code=400, detail="Retraining failed (possibly not enough data).")
+
+    return {"success": True, "message": "Lead scoring model retrained successfully."}

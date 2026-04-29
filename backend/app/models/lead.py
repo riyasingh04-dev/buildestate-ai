@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.db.database import Base
@@ -16,6 +16,9 @@ class Lead(Base):
     phone = Column(String, nullable=True)
     
     message = Column(String, nullable=True)
+    converted = Column(Boolean, default=False)
+    lead_score = Column(Float, nullable=True)
+    lead_category = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="leads")

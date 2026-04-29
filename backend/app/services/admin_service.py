@@ -3,6 +3,9 @@ from sqlalchemy import func, cast, Date
 from app.models.user import User
 from app.models.property import Property
 from app.models.lead import Lead
+from app.models.user_interaction import UserInteraction
+from app.models.purchase import Purchase
+from app.services.lead_scoring_service import LeadScoringService
 from fastapi import HTTPException
 from datetime import datetime, timedelta
 
@@ -134,6 +137,14 @@ class AdminService:
                 "sales": purchases_by_day.get(day, 0),
             })
 
+        # Lead Scoring Stats
+        hot_leads = db.query(Lead).filter(Lead.lead_category == "Hot").count()
+        warm_leads = db.query(Lead).filter(Lead.lead_category == "Warm").count()
+        cold_leads = db.query(Lead).filter(Lead.lead_category == "Cold").count()
+        converted_leads = db.query(Lead).filter(Lead.converted == True).count()
+        conversion_rate = (converted_leads / total_leads * 100) if total_leads > 0 else 0
+        avg_score = db.query(func.avg(Lead.lead_score)).scalar() or 0
+
         return {
             "total_users": total_users,
             "total_builders": total_builders,
@@ -142,6 +153,8 @@ class AdminService:
             "total_leads": total_leads,
             "total_revenue": total_sales,
             "sold_count": sold_properties,
+            "conversion_rate": round(conversion_rate, 2),
+            "avg_lead_score": round(float(avg_score), 4),
             "property_status_breakdown": [
                 {"name": "Approved", "value": max(0, approved - sold_properties)},
                 {"name": "Pending", "value": pending},
@@ -152,9 +165,82 @@ class AdminService:
                 {"name": "Buyers", "value": total_buyers},
                 {"name": "Builders", "value": total_builders},
             ],
+            "lead_category_breakdown": [
+                {"name": "Hot", "value": hot_leads},
+                {"name": "Warm", "value": warm_leads},
+                {"name": "Cold", "value": cold_leads},
+            ],
             "activity_trend": activity_trend,
         }
 
     @staticmethod
     def get_all_leads_admin(db: Session):
         return db.query(Lead).all()
+
+    @staticmethod
+    def get_lead_details(db: Session, lead_id: int):
+        lead = db.query(Lead).filter(Lead.id == lead_id).first()
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+
+        # Get AI Score Insights
+        score_details = LeadScoringService.predict_score(db, lead_id)
+
+        # Get Interaction Timeline
+        interactions = []
+        if lead.user_id:
+            interactions = (
+                db.query(UserInteraction)
+                .filter(UserInteraction.user_id == lead.user_id)
+                .order_by(UserInteraction.timestamp.desc())
+                .all()
+            )
+        
+        # Format interactions for response
+        formatted_interactions = []
+        for inter in interactions:
+            formatted_interactions.append({
+                "id": inter.id,
+                "action": inter.action,
+                "timestamp": inter.timestamp,
+                "property_title": inter.property.title if inter.property else None
+            })
+
+        return {
+            "lead": lead,
+            "score_details": score_details,
+            "interactions": formatted_interactions
+        }
+
+    @staticmethod
+    def convert_lead_to_buyer(db: Session, lead_id: int):
+        lead = db.query(Lead).filter(Lead.id == lead_id).first()
+        if not lead:
+            raise HTTPException(status_code=404, detail="Lead not found")
+        
+        if lead.converted:
+            return {"message": "Lead already converted", "lead": lead}
+
+        prop = db.query(Property).filter(Property.id == lead.property_id).first()
+        if not prop:
+            raise HTTPException(status_code=404, detail="Associated property not found")
+
+        # 1. Mark lead as converted
+        lead.converted = True
+        
+        # 2. Mark property as sold
+        prop.is_sold = True
+
+        # 3. Create purchase record if user exists
+        if lead.user_id:
+            purchase = Purchase(
+                user_id=lead.user_id,
+                property_id=prop.id,
+                amount=prop.price or 0,
+                status="completed"
+            )
+            db.add(purchase)
+
+        db.commit()
+        db.refresh(lead)
+        return {"message": "Lead successfully converted to buyer", "lead": lead}

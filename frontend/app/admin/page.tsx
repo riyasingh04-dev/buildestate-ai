@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import StatCard from '@/components/admin/StatCard';
-import { Users, Building2, TrendingUp, Handshake, Loader2, ShieldCheck, UserCheck, Activity } from 'lucide-react';
+import { Users, Building2, TrendingUp, Handshake, Loader2, ShieldCheck, UserCheck, Activity, Flame } from 'lucide-react';
 import adminApi from '@/services/adminApi';
 import {
   PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
@@ -91,8 +91,76 @@ const AdminDashboard = () => {
         ))}
       </div>
 
+      {/* AI Lead Analysis Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-[32px] p-6 text-white shadow-xl shadow-indigo-200">
+           <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/20 rounded-xl">
+                 <TrendingUp className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold">Conversion Rate</h3>
+           </div>
+           <div className="text-4xl font-black mb-1">{stats?.conversion_rate || 0}%</div>
+           <p className="text-indigo-100 text-xs font-medium">Leads converted to buyers</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-[32px] p-6 text-white shadow-xl shadow-emerald-200">
+           <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/20 rounded-xl">
+                 <Activity className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold">Avg. Lead Score</h3>
+           </div>
+           <div className="text-4xl font-black mb-1">{Math.round((stats?.avg_lead_score || 0) * 100)}%</div>
+           <p className="text-emerald-100 text-xs font-medium">Average conversion probability</p>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-[32px] p-6 text-white shadow-xl shadow-orange-200">
+           <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-white/20 rounded-xl">
+                 <Flame className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold">Hot Leads</h3>
+           </div>
+           <div className="text-4xl font-black mb-1">{stats?.lead_category_breakdown?.[0]?.value || 0}</div>
+           <p className="text-orange-100 text-xs font-medium">Ready for immediate contact</p>
+        </div>
+      </div>
+
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+        {/* Chart: Lead Quality Breakdown (Donut) */}
+        <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-orange-50 rounded-2xl">
+              <Flame className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-slate-900">Lead Quality</h3>
+              <p className="text-xs text-slate-400 font-medium">AI-categorized lead distribution</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={240}>
+            <PieChart>
+              <Pie
+                data={stats?.lead_category_breakdown || []}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={90}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                <Cell fill="#f43f5e" /> {/* Hot */}
+                <Cell fill="#f59e0b" /> {/* Warm */}
+                <Cell fill="#3b82f6" /> {/* Cold */}
+              </Pie>
+              <Tooltip content={<CustomTooltipPie />} />
+              <Legend verticalAlign="bottom" height={36}/>
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
 
         {/* Chart 1: Property Moderation Status (Donut) */}
         <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm p-8">
@@ -105,14 +173,14 @@ const AdminDashboard = () => {
               <p className="text-xs text-slate-400 font-medium">Approval status breakdown</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={240}>
             <PieChart>
               <Pie
                 data={stats?.property_status_breakdown || []}
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={110}
+                innerRadius={60}
+                outerRadius={90}
                 paddingAngle={4}
                 dataKey="value"
               >
@@ -121,9 +189,7 @@ const AdminDashboard = () => {
                 ))}
               </Pie>
               <Tooltip content={<CustomTooltipPie />} />
-              <Legend
-                formatter={(value) => <span className="text-sm font-semibold text-slate-600">{value}</span>}
-              />
+              <Legend verticalAlign="bottom" height={36}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
@@ -139,7 +205,7 @@ const AdminDashboard = () => {
               <p className="text-xs text-slate-400 font-medium">Buyers vs Builders on platform</p>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={240}>
             <BarChart data={stats?.user_role_breakdown || []} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
               <XAxis dataKey="name" tick={{ fontSize: 13, fontWeight: 600, fill: '#64748b' }} axisLine={false} tickLine={false} />
@@ -148,7 +214,7 @@ const AdminDashboard = () => {
                 contentStyle={{ borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}
                 labelStyle={{ fontWeight: 700, color: '#1e293b' }}
               />
-              <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+              <Bar dataKey="value" radius={[10, 10, 0, 0]}>
                 {(stats?.user_role_breakdown || []).map((_: any, index: number) => (
                   <Cell key={`cell-${index}`} fill={COLORS_BAR[index]} />
                 ))}

@@ -6,7 +6,7 @@ from app.core.security import require_admin
 from app.models.user import User
 from app.schemas.user import UserOut
 from app.schemas.property import PropertyResponse
-from app.schemas.lead import LeadResponse
+from app.schemas.lead import LeadResponse, LeadDetailResponse
 from app.services.admin_service import AdminService
 
 router = APIRouter()
@@ -67,3 +67,11 @@ def delete_property_admin(property_id: int, db: Session = Depends(get_db), admin
 @router.get("/leads", response_model=List[LeadResponse])
 def get_leads_admin(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     return AdminService.get_all_leads_admin(db)
+
+@router.get("/leads/{lead_id}/details", response_model=LeadDetailResponse)
+def get_lead_details(lead_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    return AdminService.get_lead_details(db, lead_id)
+
+@router.post("/leads/{lead_id}/convert")
+def convert_lead(lead_id: int, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    return AdminService.convert_lead_to_buyer(db, lead_id)

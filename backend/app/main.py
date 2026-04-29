@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+print("DEBUG: app/main.py is starting...")
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

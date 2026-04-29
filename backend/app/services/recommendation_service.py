@@ -5,6 +5,8 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from app.models.user_interaction import UserInteraction
 from app.models.property import Property
+from app.models.lead import Lead
+from app.services.lead_scoring_service import LeadScoringService
 from app.utils.pinecone_utils import get_pinecone, query_properties_with_filter, TEXT_DIMENSION #Pinecone helper functions
 # Removed from app.utils.embeddings import TEXT_DIMENSION
 
@@ -38,6 +40,20 @@ class RecommendationService:#Recommendation logic lives here
         db.add(interaction)
         db.commit()
         db.refresh(interaction)
+
+        # ── Trigger Lead Score Update ─────────────────────────────────────────
+        if user_id:
+            leads = db.query(Lead).filter(Lead.user_id == user_id).all()
+            for lead in leads:
+                try:
+                    result = LeadScoringService.predict_score(db, lead.id)
+                    if result:
+                        lead.lead_score = result["conversion_probability"]
+                        lead.lead_category = result["lead_category"]
+                except Exception as e:
+                    logger.error(f"Error updating lead score for lead {lead.id}: {e}")
+            db.commit()
+
         return interaction
 
     @staticmethod

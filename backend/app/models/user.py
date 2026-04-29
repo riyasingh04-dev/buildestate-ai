@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, Float
 from sqlalchemy.orm import relationship
 from app.db.database import Base
 
@@ -13,6 +13,7 @@ class User(Base):
     role = Column(String, default="user")
     is_blocked = Column(Boolean, default=False, server_default="false")
     is_verified = Column(Boolean, default=False, server_default="false")  # for builders
+    budget = Column(Float, nullable=True)
 
     properties = relationship("Property", back_populates="builder", cascade="all, delete-orphan")
     leads = relationship("Lead", back_populates="user", cascade="all, delete-orphan")

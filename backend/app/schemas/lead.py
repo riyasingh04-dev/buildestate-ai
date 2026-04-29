@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class UserSummary(BaseModel):
@@ -7,6 +7,15 @@ class UserSummary(BaseModel):
     name: str
     email: str
     phone: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+class InteractionSummary(BaseModel):
+    id: int
+    action: str
+    timestamp: datetime
+    property_title: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -33,9 +42,26 @@ class LeadResponse(BaseModel):
     name: Optional[str] = None
     email: Optional[str] = None
     phone: Optional[str] = None
+    converted: bool = False
+    lead_score: Optional[float] = None
+    lead_category: Optional[str] = None
     created_at: datetime
     user: Optional[UserSummary] = None
     property: PropertySummary
+
+    class Config:
+        from_attributes = True
+
+class LeadScoreResponse(BaseModel):
+    conversion_probability: float
+    lead_category: str
+    explanation: Optional[str] = None
+    contributions: Optional[dict] = None
+
+class LeadDetailResponse(BaseModel):
+    lead: LeadResponse
+    score_details: LeadScoreResponse
+    interactions: List[InteractionSummary]
 
     class Config:
         from_attributes = True
