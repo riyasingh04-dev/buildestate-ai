@@ -38,6 +38,8 @@ class PropertyResponse(PropertyBase):
     admin_status: str = "pending"
     created_at: datetime
     is_purchased: Optional[bool] = False
+    property_score: float = 0.0
+    property_category: Optional[str] = None
 
     class Config:
         from_attributes = True

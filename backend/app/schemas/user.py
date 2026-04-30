@@ -21,6 +21,8 @@ class UserOut(BaseModel):
     phone: Optional[str] = None
     is_blocked: bool = False
     is_verified: bool = False
+    broker_rank: Optional[str] = None
+    broker_score: float = 0.0
 
     class Config:
         from_attributes = True

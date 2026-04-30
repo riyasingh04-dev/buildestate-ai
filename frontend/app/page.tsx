@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '@/services/api';
 import PropertyCard from '@/components/PropertyCard';
-import { Search, MapPin, DollarSign, Filter, Building2, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
+import { Search, MapPin, DollarSign, Filter, Building2, LayoutGrid, Sparkles, ChevronLeft, ChevronRight, TrendingUp, XCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { useAuth } from '@/context/AuthContext';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const { user, getSessionId } = useAuth();
@@ -14,19 +15,39 @@ export default function Home() {
   const [currentPage, setCurrentPage] = useState(1);
   const propertiesPerPage = 12;
   const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [brokers, setBrokers] = useState<any[]>([]);
   const [recStrategy, setRecStrategy] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [recsLoading, setRecsLoading] = useState(false);
+  const [brokerLoading, setBrokerLoading] = useState(false);
   const [filters, setFilters] = useState({
     min_price: '',
     max_price: '',
-    location: ''
+    location: '',
+    builder_id: '' as string | number
   });
+  const [brokerRankFilter, setBrokerRankFilter] = useState<string>('Elite');
 
   useEffect(() => {
     fetchProperties(currentPage);
     fetchRecommendations();
-  }, [user, currentPage]);
+    fetchBrokers();
+  }, [user, currentPage, filters, brokerRankFilter]);
+
+  const fetchBrokers = async () => {
+    setBrokerLoading(true);
+    try {
+      const url = brokerRankFilter === 'All' 
+        ? '/ml/brokers/rankings' 
+        : `/ml/brokers/rankings?rank=${brokerRankFilter}`;
+      const response = await api.get(url);
+      setBrokers(response.data.slice(0, 4)); 
+    } catch (error) {
+      console.error('Error fetching brokers', error);
+    } finally {
+      setBrokerLoading(false);
+    }
+  };
 
   const fetchRecommendations = async () => {
     setRecsLoading(true);
@@ -76,6 +97,7 @@ export default function Home() {
       if (filters.min_price) params.append('min_price', filters.min_price);
       if (filters.max_price) params.append('max_price', filters.max_price);
       if (filters.location) params.append('location', filters.location);
+      if (filters.builder_id) params.append('builder_id', filters.builder_id.toString());
       params.append('skip', skip.toString());
       params.append('limit', propertiesPerPage.toString());
 
@@ -219,18 +241,106 @@ export default function Home() {
         </section>
       )}
 
+      {/* Featured Brokers Section */}
+      {brokers.length > 0 && (
+        <section className="container mx-auto px-4 py-16">
+          <div className="mb-10 text-center">
+            <h2 className="text-3xl font-bold text-foreground tracking-tight">Top Performing Brokers</h2>
+            <p className="text-muted-foreground mt-2 font-medium">Expert agents categorized by their property quality standards.</p>
+            
+            <div className="mt-8 flex justify-center gap-2">
+              {['Elite', 'Good', 'Average', 'All'].map((rank) => (
+                <button
+                  key={rank}
+                  onClick={() => setBrokerRankFilter(rank)}
+                  className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border ${
+                    brokerRankFilter === rank 
+                      ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20 scale-105' 
+                      : 'bg-white text-slate-500 border-slate-200 hover:border-primary hover:text-primary'
+                  }`}
+                >
+                  {rank === 'Elite' ? '🌟 Elite' : 
+                   rank === 'Good' ? '👍 Good' : 
+                   rank === 'Average' ? '📊 Average' : '🌍 All Brokers'}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {brokers.map((broker) => (
+              <button 
+                key={broker.id} 
+                onClick={() => {
+                  setFilters(prev => ({ ...prev, builder_id: broker.id }));
+                  setCurrentPage(1);
+                  // Scroll to listings
+                  document.getElementById('listings-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className={`bg-white border rounded-[32px] p-6 shadow-sm hover:shadow-xl transition-all text-center group relative overflow-hidden ${
+                  filters.builder_id === broker.id ? 'border-primary ring-2 ring-primary/10' : 'border-slate-100'
+                }`}
+              >
+                {filters.builder_id === broker.id && (
+                  <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
+                )}
+                <div className="relative mb-4 inline-block">
+                  <div className={`h-20 w-20 rounded-full flex items-center justify-center mx-auto shadow-inner transition-colors duration-300 ${
+                    filters.builder_id === broker.id ? 'bg-primary text-white' : 'bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white'
+                  }`}>
+                    <Building2 className="h-8 w-8" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 bg-amber-400 text-white p-1.5 rounded-full shadow-lg border-2 border-white">
+                    <Sparkles className="h-3 w-3" />
+                  </div>
+                </div>
+                <h3 className="font-bold text-lg text-slate-900 truncate">{broker.name}</h3>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                   <span className={cn(
+                     "px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter border",
+                     broker.rank === 'Elite' ? "bg-amber-50 text-amber-600 border-amber-100" :
+                     broker.rank === 'Good' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                     "bg-slate-50 text-slate-600 border-slate-100"
+                   )}>
+                     {broker.rank}
+                   </span>
+                   <span className="text-slate-400 text-xs font-bold">Score: {broker.score.toFixed(1)}</span>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-center gap-2">
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">View Listings</p>
+                   <ChevronRight className={`h-3 w-3 text-slate-300 group-hover:text-primary transition-colors ${filters.builder_id === broker.id ? 'text-primary' : ''}`} />
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Main Content */}
-      <section className="container mx-auto px-4 py-16">
+      <section id="listings-section" className="container mx-auto px-4 py-16">
         <div className="mb-12 flex flex-col justify-between items-end gap-6 md:flex-row md:items-center">
           <div>
             <div className="mb-2 flex items-center space-x-2 text-primary font-bold tracking-widest uppercase text-xs">
               <div className="h-1 w-8 bg-primary" />
-              <span>Available Listings</span>
+              <span>{filters.builder_id ? 'Broker Exclusive' : 'Available Listings'}</span>
             </div>
-            <h2 className="text-4xl font-bold text-foreground">Discover Properties</h2>
+            <h2 className="text-4xl font-bold text-foreground">
+              {filters.builder_id ? (
+                <>
+                  Listings by <span className="text-primary">{brokers.find(b => b.id === filters.builder_id)?.name || 'Broker'}</span>
+                </>
+              ) : 'Discover Properties'}
+            </h2>
           </div>
           
           <div className="flex items-center gap-4">
+            {filters.builder_id && (
+              <button 
+                onClick={() => setFilters(prev => ({ ...prev, builder_id: '' }))}
+                className="text-xs font-bold text-slate-400 hover:text-rose-500 flex items-center gap-1 transition-colors mr-4"
+              >
+                <XCircle className="h-4 w-4" /> Clear Broker Filter
+              </button>
+            )}
              <div className="flex items-center rounded-lg border border-border bg-muted/30 p-1">
                 <button className="rounded-md bg-white p-1.5 shadow-sm text-primary">
                   <LayoutGrid className="h-4 w-4" />

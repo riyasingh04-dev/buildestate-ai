@@ -24,24 +24,23 @@ from apscheduler.triggers.interval import IntervalTrigger #Defines how often the
 from app.db.database import SessionLocal #create DB connections
 from app.models.property import Property #Your database table model for properties
 from app.services.pinecone_sync import sync_property_to_pinecone #function that create embeddings and upsert to Pinecone
+from app.services.property_scoring_service import PropertyScoringService
+from app.services.broker_service import BrokerService
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)#Set up a logger for this module (useful for debugging and monitoring)
 
-# ---------------------------------------------------------------------------
+
 # Config
-# ---------------------------------------------------------------------------
-SYNC_INTERVAL_MINUTES: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "15"))
+SYNC_INTERVAL_MINUTES: int = int(os.getenv("SYNC_INTERVAL_MINUTES", "15"))#How often to run the sync job (default: 15 minutes, can be overridden by environment variable)
 
-# ---------------------------------------------------------------------------
+
 # Internal state
-# ---------------------------------------------------------------------------
 _scheduler: Optional[BackgroundScheduler] = None
 _last_run: Optional[datetime] = None   # UTC timestamp of the previous successful run
 
 
-# ---------------------------------------------------------------------------
+
 # The job itself
-# ---------------------------------------------------------------------------
 
 def _sync_job() -> None:
     """
@@ -76,7 +75,7 @@ def _sync_job() -> None:
             len(unsynced), len(updated), len(to_sync),
         )
 
-        for prop in to_sync.values():
+        for prop in to_sync.values():#Iterate through each property that needs syncing (both new and recently updated)
             ok = sync_property_to_pinecone(prop, db)
             if ok:
                 synced += 1
@@ -90,6 +89,21 @@ def _sync_job() -> None:
 
     except Exception as exc:
         logger.exception("[Scheduler] Unexpected error: %s", exc)
+    finally:
+        db.close()
+
+def _scoring_job() -> None:
+    """
+    Recalculate property scores and broker ranks.
+    """
+    logger.info("[Scheduler] Starting ML Scoring job...")
+    db = SessionLocal()
+    try:
+        PropertyScoringService.update_all_scores(db)
+        BrokerService.update_broker_ranks(db)
+        logger.info("[Scheduler] ML Scoring job complete.")
+    except Exception as exc:
+        logger.error("[Scheduler] Scoring job error: %s", exc)
     finally:
         db.close()
 
@@ -111,6 +125,16 @@ def start_scheduler() -> None:
         max_instances=1,       # prevent overlapping runs
         misfire_grace_time=60, # skip instead of pile up if delayed
     )
+    
+    _scheduler.add_job(
+        func=_scoring_job,
+        trigger=IntervalTrigger(minutes=60),
+        id="ml_scoring",
+        name="ML Property and Broker Scoring",
+        replace_existing=True,
+        max_instances=1,
+    )
+    
     _scheduler.start()
     logger.info(
         "[Scheduler] Started — will sync Pinecone every %d minute(s).",

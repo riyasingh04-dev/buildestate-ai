@@ -1,153 +1,169 @@
-# 🏠 BuildEstate AI
+#  BuildEstate AI
 
-A modern, full-stack real estate platform that connects **property buyers** and **builders**, enhanced by a powerful **AI-Chatbot Engine**, a robust **admin panel**, and a highly secure backend architecture.
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Next.js](https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql)](https://www.postgresql.org/)
+[![Pinecone](https://img.shields.io/badge/Pinecone-272727?style=for-the-badge&logo=pinecone)](https://www.pinecone.io/)
+[![XGBoost](https://img.shields.io/badge/XGBoost-EB5131?style=for-the-badge)](https://xgboost.ai/)
 
----
-
-## 🚀 Overview
-
-**BuildEstate AI** is designed to simplify and intelligently automate real estate interactions:
-
-* 👤 Users can browse properties and chat with the AI for smart recommendations.
-* 👷 Builders can list and vividly showcase their real estate portfolios.
-* ❤️ Users can express interest and generate leads seamlessly.
-* 👑 Admins manage the entire ecosystem securely, ranging from property moderation to account suspensions.
+**BuildEstate AI** is a premium, full-stack real estate ecosystem designed to bridge the gap between property buyers and builders. It leverages cutting-edge AI for semantic search, lead scoring, and personalized recommendations, all wrapped in a sleek, modern interface.
 
 ---
 
-## ✨ Core Features
+## Overview
 
-### 🤖 Smart AI Real Estate Assistant
-* Powered by **Groq Engine** (`llama-3.3-70b-versatile`) and **Pinecone Vector Search**.
-* **Semantic Search:** Understands complex queries like "cozy 2BHK near a park with a swimming pool".
-* **Human-Readable Output:** Beautifully formatted responses using **React-Markdown** with numbered lists, bold text, and clear spacing.
-* **Property Cards:** Direct integration returns interactive property cards inside the chat.
-
-### 🔐 Authentication & Security
-* JWT-based advanced authentication with RBAC (Role-Based Access Control).
-* **Block System:** Suspended users/builders are strictly denied access platform-wide.
-
-### 🏠 Property Lifecycle
-* **Moderation:** Properties go through a `pending` -> `approved` workflow.
-* **Sold Status:** Properties can be marked as **Sold**, automatically restricting further purchases and updating platform-wide analytics.
-* **Auto-Sync:** Real-time synchronization of property data to Pinecone for instant search availability.
-
-### ❤️ Intelligent Lead Management
-* **Anonymous Leads:** Captures name, email, and phone for non-logged-in users.
-* **Builder Dashboard:** Easy-to-use interface to manage incoming inquiries.
-* **Admin Global Monitoring:** Centralized access for administrators to monitor every lead generated across the platform.
-
-### 👑 Admin Power Suite
-* **Comprehensive Stats:** Real-time tracking of revenue, property status, and user growth with interactive **Recharts** visualizations.
-* **Moderation Tools:** Approve listings, verify builders, and manage user status.
-* **Global Leads:** Monitor all potential buyer interactions across the ecosystem.
+BuildEstate AI isn't just a property listing site; it's an intelligent marketplace:
+*   **For Buyers:** Find your dream home using natural language, get personalized suggestions, and chat with an AI that understands your needs.
+*   **For Builders:** Showcase portfolios with rich media, manage leads with ML-driven insights, and track performance via advanced analytics.
+*   **For Admins:** Orchestrate the entire platform with robust moderation tools, global lead monitoring, and real-time revenue tracking.
 
 ---
 
-## 👥 Roles & Permissions
+##  Core Features (AI & ML Deep Dive)
 
-| Role | Permissions |
-| --- | --- |
-| 👤 **User** | Semantic search via AI, view properties, create leads, and track personal interests. |
-| 👷 **Builder** | List properties, track active/pending listings, and manage incoming leads. |
-| 👑 **Admin** | Full ecosystem supervision, property moderation, global leads monitoring, and data analytics. |
+###  1. Advanced Semantic Search & AI Chatbot
+*   **Vector-First Search:** Powered by **Pinecone** and **Sentence-Transformers**, the platform understands the *intent* behind queries like "3BHK with a balcony near the tech hub".
+*   **Groq Engine Integration:** Uses `llama-3.3-70b-versatile` for lightning-fast, human-like conversations.
+*   **Interactive Property Cards:** The chatbot doesn't just talk; it renders interactive cards for properties it recommends.
 
----
+###  2. ML-Driven Lead Scoring & Explainability
+*   **XGBoost Classifier:** Predicts the likelihood of a lead converting into a sale based on user behavior, budget match, and engagement history.
+*   **SHAP Explainability:** Provides "Why" behind the score. Builders can see exactly which features (e.g., "high engagement" or "price match") contributed to a "Hot" lead status.
+*   **Lead Decay Logic:** Automatically adjusts scores over time if interaction drops, ensuring focus remains on active prospects.
 
-## 🧠 Tech Stack
+###  3. Hybrid Recommendation Engine
+*   **Collaborative Filtering:** Recommends properties based on what similar users liked.
+*   **Content-Based Filtering:** Suggests properties with similar attributes (location, price, amenities) to those the user has already viewed.
+*   **Cold-Start Mitigation:** Automatically switches strategies for new users to ensure they always see relevant content.
 
-### 🔧 Backend Core
-* **Framework:** FastAPI
-* **Database:** PostgreSQL (SQLAlchemy) & **Pinecone** (Vector Database)
-* **AI Engine:** Groq API & LangChain
-* **Embeddings:** HuggingFace / Google AI (Local Embeddings for Vector Search)
-
-### 🎨 Frontend UI
-* **Framework:** Next.js 14+ (App Router)
-* **Rendering:** **React-Markdown** for structured chatbot communication
-* **Animations:** Framer Motion
-* **Visualizations:** Recharts (Admin Dashboards)
-* **Icons:** Lucide React
+### 4. Enterprise-Grade Security & Admin Suite
+*   **RBAC (Role-Based Access Control):** Granular permissions for Users, Builders, and Admins.
+*   **Sophisticated Moderation:** Full `pending` -> `approved` workflow for all property listings.
+*   **Analytics Dashboards:** Real-time data visualization using **Recharts**, tracking property health, user growth, and lead conversion rates.
 
 ---
 
-## ⚙️ Environment Setup
+##  Project Structure
 
-Create a `.env` file inside the root directory:
-
-```env
-# 🔐 JWT Config
-SECRET_KEY=your_super_secret_key
-ALGORITHM=HS256
-
-# 🗄️ Database
-DATABASE_URL=postgresql://postgres:password@localhost:5432/realestate
-
-# 🤖 AI & Search
-GROQ_API_KEY=your_groq_api_key
-PINECONE_API_KEY=your_pinecone_api_key
-PINECONE_ENVIRONMENT=your_environment
-PINECONE_INDEX=your_index_name
+```text
+BuildEstate_AI/
+├── backend/                # FastAPI Application
+│   ├── app/
+│   │   ├── ai/             # AI Agents & LLM Logic
+│   │   ├── db/             # Database connection & Base models
+│   │   ├── models/         # SQLAlchemy Models
+│   │   ├── routes/         # API Endpoints (Auth, ML, Property, etc.)
+│   │   ├── schemas/        # Pydantic Schemas
+│   │   ├── services/       # Business Logic (Recommendations, Lead Scoring)
+│   │   └── utils/          # Helper functions
+│   ├── scripts/            # Database migrations & Sync scripts
+│   └── main.py             # Entry point
+├── frontend/               # Next.js 14+ Application (App Router)
+│   ├── app/                # Main routes & Page components
+│   ├── components/         # Reusable UI Components
+│   ├── context/            # React Context (Auth, UI State)
+│   ├── lib/                # Utility functions
+│   └── services/           # API integration layer
+├── .env                    # Environment variables (Root)
+└── README.md               
 ```
 
-⚠️ **Important:** Do NOT push the `.env` file to your GitHub repository.
+---
+
+##  Tech Stack
+
+| Layer | Technologies |
+| :--- | :--- |
+| **Backend** | FastAPI, SQLAlchemy (PostgreSQL), Pydantic |
+| **AI / ML** | Groq API, LangChain, Pinecone, XGBoost, SHAP, Pandas, Numpy |
+| **Frontend** | Next.js 14, React 19, TypeScript, Tailwind CSS |
+| **Data Viz** | Recharts, Lucide React |
+| **Animations**| Framer Motion |
+| **Search** | Sentence-Transformers (Embeddings), Vector Search |
 
 ---
 
-## ▶️ Running the Project Locally
+##  Environment Setup
 
-### Start Backend
+Create a `.env` file in the root directory:
 
+```env
+#  Security
+SECRET_KEY=your_secure_random_string
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+#  Database
+DATABASE_URL=postgresql://user:password@localhost:5432/realestate
+
+#  AI & Vector Search
+GROQ_API_KEY=your_groq_api_key
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_INDEX_NAME=real-estate
+
+#  Environment
+ENVIRONMENT=development
+```
+
+---
+
+##  Running Locally
+
+### 1. Backend Setup
 ```bash
 cd backend
 python -m venv venv
-venv\Scripts\activate
+source venv/bin/activate  # venv\Scripts\activate on Windows
 pip install -r requirements.txt
+# Note: Ensure you have xgboost, shap, and pandas installed
+pip install xgboost shap pandas joblib
 
+# Initialize Database & Sync Vectors
+python scripts/migrate_to_pgvector.py  # If using pgvector
+python sync_to_pinecone.py            # Sync properties to Pinecone
+
+# Start Server
 uvicorn app.main:app --reload
 ```
 
-### Start Frontend
-
+### 2. Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
----
-
-## 📡 API Architecture & Documentation
-
-The Backend automatically generates interactive documentation for your API endpoints. 
-Once your server is running, navigate to:
-
-```url
-http://127.0.0.1:8000/docs
-```
-Here, you can test endpoints ranging from `POST /ai/chat` to `GET /properties/me` live.
+The app will be available at `http://localhost:3000`.
 
 ---
 
-## 💎 Design Highlights
-* **SaaS Design Patterns**: Dark mode support, deep purple/indigo gradients, and translucent overlay elements.
-* **Smart Dashboards**: Tailor-made perspectives varying drastically based on Active Role.
-* **Responsive**: Fully optimal on mobile or massive desktop interfaces.
+##  API Documentation
+
+Once the backend is running, you can access the interactive Swagger docs at:
+*   **Interactive UI:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+*   **JSON Schema:** [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json)
 
 ---
 
-## 🚀 Future Enhancements
-* 💳 Payment Gateway / Direct Deposit Integration (Stripe)
-* 🗺️ Advanced Map/Geo-location view for properties
-* 📧 Email Notifications dynamically hooked into Lead creation
-* 🌍 Comprehensive Live Deployment Architecture (AWS / Vercel / Render)
+##  Design Philosophy
+*   **Modern Aesthetics:** Deep purple/indigo gradients, dark mode optimization, and translucent "Glassmorphism" elements.
+*   **Responsive First:** Every dashboard and property card is optimized for mobile, tablet, and desktop.
+*   **Micro-interactions:** Subtle Framer Motion animations for a premium feel.
 
 ---
 
-## 👨‍💻 Author
-**Riya Singh** 🚀
+##  Future Roadmap
+*   [ ] Stripe Payment Integration for direct property deposits.
+*   [ ] Advanced Geo-fencing for location-based alerts.
+*   [ ] AR View for properties (Future mobile app integration).
+*   [ ] Multi-language support for global expansion.
 
 ---
 
-## ⭐ Support
-If this project helped you out, do not hesitate to drop a ⭐ on GitHub!
+##  Author
+**Riya Singh** - *Lead Developer & AI Architect* 
+
+---
+
+##  Support
+If you find this project interesting, please give it a ⭐ on GitHub!

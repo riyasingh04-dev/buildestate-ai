@@ -13,19 +13,18 @@ from app.db import base  # ensures all models are imported before create_all
 # Scheduler
 from app.services.scheduler import start_scheduler, stop_scheduler
 
-# ── Lifespan (replaces deprecated @app.on_event) ──────────────────────────
-
+#Lifespan (replaces deprecated @app.on_event)
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # ── Startup ────────────────────────────────────────────────────────────
+    #Startup
     Base.metadata.create_all(bind=engine)   # create/alter tables
     start_scheduler()                        # kick off background sync
     yield
-    # ── Shutdown ───────────────────────────────────────────────────────────
+    #Shutdown
     stop_scheduler()
 
 
-# ── App ────────────────────────────────────────────────────────────────────
+#App Initialization
 app = FastAPI(
     title="BuildEstate AI",
     description="AI-powered real estate platform with vector-first search",
@@ -33,7 +32,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# ── CORS ───────────────────────────────────────────────────────────────────
+#CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -42,7 +41,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ── Routers ────────────────────────────────────────────────────────────────
+# Routers 
 app.include_router(auth.router,     prefix="/auth",       tags=["Auth"])
 app.include_router(property.router, prefix="/properties", tags=["Properties"])
 app.include_router(lead.router,     prefix="/leads",      tags=["Leads"])
@@ -58,4 +57,8 @@ app.include_router(search_router.router, prefix="/search", tags=["Search"])
 
 @app.get("/")
 def home():
-    return {"message": "BuildEstate AI Backend Running 🚀 — Vector-first search active"}
+    return {"message": "BuildEstate AI Backend Running  — Vector-first search active"}
+
+
+from app.routes import property
+app.include_router(property.router)

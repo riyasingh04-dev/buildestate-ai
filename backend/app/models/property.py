@@ -20,6 +20,8 @@ class Property(Base):
     amenities    = Column(String, nullable=True)        # Comma-separated list
     is_sold      = Column(Boolean, default=False, nullable=False)
     embedding_data = Column(String, nullable=True)      # JSON-encoded 384-dim vector
+    property_score = Column(Float, default=0.0)
+    property_category = Column(String, nullable=True)   # Luxury / Standard / Economy
 
     # ── Sync tracking ──────────────────────────────────────────────────────
     pinecone_synced = Column(Boolean, default=False, nullable=False)

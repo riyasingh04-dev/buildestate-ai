@@ -15,13 +15,16 @@ COLD_START_THRESHOLD = 3
 # Weight for collaborative vs content-based (0.7 = 70% collaborative, 30% content-based)
 DEFAULT_ALPHA = 0.7
 
+# Quality boost weight (how much property_score influences the final rank)
+QUALITY_BOOST_WEIGHT = 0.2
 
-def _count_interactions(db: Session, user_id: Optional[int], session_id: Optional[str]) -> int:
+
+def _count_interactions(db: Session, user_id: Optional[int], session_id: Optional[str]) -> int:#Count how many unique interactions an entity has made.
     """Count how many unique interactions an entity has made."""
     query = db.query(UserInteraction)
-    if user_id:
+    if user_id:#If we have a user_id, filter interactions by that user_id (count all interactions for this user)
         query = query.filter(UserInteraction.user_id == user_id)
-    elif session_id:
+    elif session_id:#If we have a session_id (anonymous user), filter interactions by that session_id (count all interactions for this session)
         query = query.filter(UserInteraction.session_id == session_id)
     else:
         return 0
@@ -31,7 +34,7 @@ def _count_interactions(db: Session, user_id: Optional[int], session_id: Optiona
 class HybridService:
 
     @staticmethod
-    async def get_hybrid_recommendations(
+    async def get_hybrid_recommendations(#This method generates property recommendations using a hybrid strategy that combines collaborative filtering and content-based filtering. It takes into account the number of interactions to determine whether to use pure content-based recommendations (for cold start) or a weighted blend of both strategies (for warm/mature users). It also incorporates a quality boost based on property scores to enhance the final ranking of recommended properties.
         db: Session,
         top_k: int = 5,
         user_id: Optional[int] = None,
@@ -126,9 +129,17 @@ class HybridService:
 
         hybrid_scores: Dict[int, float] = {}
         for pid in all_pids:
+            # 1. Base Score (Collaborative + Content)
             c_score = collab_norm.get(pid, 0.0)
             cb_score = content_norm.get(pid, 0.0)
-            hybrid_scores[pid] = alpha * c_score + (1 - alpha) * cb_score
+            base_score = alpha * c_score + (1 - alpha) * cb_score
+            
+            # 2. Quality Boost (from our new Property Scoring model)
+            prop = db.query(Property).filter(Property.id == pid).first()
+            quality_score = (prop.property_score or 0.0) / 10.0 if prop else 0.0
+            
+            # Final Blend
+            hybrid_scores[pid] = base_score + (QUALITY_BOOST_WEIGHT * quality_score)
 
         # Sort by combined score
         ranked = sorted(hybrid_scores.items(), key=lambda x: x[1], reverse=True)[:top_k]
@@ -144,11 +155,13 @@ class HybridService:
                     "collab_score": round(collab_norm.get(pid, 0.0), 4),
                     "content_score": round(content_norm.get(pid, 0.0), 4),
                     "source": "hybrid",
+                    "quality_score": prop.property_score,
                     "metadata": {
                         "title": prop.title,
                         "location": prop.location,
                         "price": prop.price,
                         "image_url": prop.image_url,
+                        "property_category": prop.property_category,
                     }
                 })
 

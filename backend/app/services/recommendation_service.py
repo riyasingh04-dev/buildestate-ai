@@ -157,18 +157,25 @@ class RecommendationService:#Recommendation logic lives here
 
     @staticmethod
     async def get_cold_start_recommendations(db: Session, top_k: int):
-        # Return latest approved properties
-        latest_props = db.query(Property).filter(Property.admin_status == "approved").order_by(Property.created_at.desc()).limit(top_k).all()
+        # Return top-rated approved properties (not just latest)
+        top_props = (
+            db.query(Property)
+            .filter(Property.admin_status == "approved")
+            .order_by(Property.property_score.desc(), Property.created_at.desc())
+            .limit(top_k)
+            .all()
+        )
         return [
             {
                 "property_id": p.id,
-                "score": 0.0,
+                "score": p.property_score or 0.0,
                 "metadata": {
                     "title": p.title,
                     "location": p.location,
                     "price": p.price,
-                    "image_url": p.image_url
+                    "image_url": p.image_url,
+                    "property_category": p.property_category
                 }
             }
-            for p in latest_props
+            for p in top_props
         ]

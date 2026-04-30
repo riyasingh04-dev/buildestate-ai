@@ -12,10 +12,11 @@ interface PropertyCardProps {
   image_url?: string;
   is_sold?: boolean;
   status?: string;
+  property_category?: string;
   onInteraction?: (action: 'view' | 'click') => void;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location, description, image_url, is_sold, status, onInteraction }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location, description, image_url, is_sold, status, property_category, onInteraction }) => {
   const defaultImage = "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=800&auto=format&fit=crop";
   const showSold = is_sold || status?.toLowerCase() === 'sold';
 
@@ -41,8 +42,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ id, title, price, location,
           </div>
         )}
 
+        {property_category && (
+          <div className={`absolute top-4 left-4 z-20 rounded-lg px-2.5 py-1 text-[10px] font-black uppercase tracking-widest shadow-lg border ${
+            property_category === 'Luxury' ? 'bg-amber-500 text-white border-amber-400' : 
+            property_category === 'Standard' ? 'bg-blue-600 text-white border-blue-500' : 
+            'bg-slate-700 text-white border-slate-600'
+          }`}>
+            {property_category}
+          </div>
+        )}
+
         <div className="absolute top-4 right-4 rounded-full bg-background/90 px-3 py-1 text-sm font-semibold text-primary backdrop-blur-sm shadow-sm z-20">
-          ${price.toLocaleString()}
+          ₹{price.toLocaleString()}
         </div>
       </div>
 

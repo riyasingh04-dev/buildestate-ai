@@ -10,6 +10,8 @@ from app.core.security import get_current_user, get_optional_user
 from app.models.user import User
 from app.models.lead import Lead
 from app.services.lead_scoring_service import LeadScoringService
+from app.services.property_scoring_service import PropertyScoringService
+from app.services.broker_service import BrokerService
 from app.schemas.lead import LeadScoreResponse
 from pydantic import BaseModel
 
@@ -212,3 +214,57 @@ async def train_lead_model(
         raise HTTPException(status_code=400, detail="Retraining failed (possibly not enough data).")
 
     return {"success": True, "message": "Lead scoring model retrained successfully."}
+
+# ─── Property & Broker Ranking Endpoints ─────────────────────────────────────
+
+@router.post("/update-property-scores")
+async def update_property_scores(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Recalculate quality scores for all properties.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can trigger mass scoring.")
+
+    PropertyScoringService.update_all_scores(db)
+    return {"success": True, "message": "All property scores updated."}
+
+@router.post("/train-property-model")
+async def train_property_model(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Train/Retrain the Property Scoring XGBoost Regressor.
+    """
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can train models.")
+
+    success = PropertyScoringService.train_model(db)
+    if not success:
+        raise HTTPException(status_code=400, detail="Retraining failed (possibly not enough data).")
+
+    return {"success": True, "message": "Property scoring model trained successfully."}
+
+@router.get("/brokers/rankings")
+async def get_broker_rankings(
+    rank: Optional[str] = None,
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieve ranked list of brokers based on property quality.
+    """
+    BrokerService.update_broker_ranks(db) # Refresh ranks before serving
+    brokers = BrokerService.get_brokers_by_rank(db, rank)
+    
+    return [
+        {
+            "id": b.id,
+            "name": b.name,
+            "rank": b.broker_rank,
+            "score": b.broker_score,
+            "email": b.email
+        } for b in brokers
+    ]
