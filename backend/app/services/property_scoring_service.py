@@ -57,11 +57,15 @@ class PropertyScoringService:
             features = PropertyScoringService.calculate_features(prop)
 
             # Synthetic target
+            import numpy as np
+
+            noise = np.random.normal(0, 0.5)
+
             target = (
                 features["size_score"] * 0.3 +
                 features["value_score"] * 0.3 +
                 features["amenities_score"] * 0.4
-            ) * 10
+            ) * 10 + noise
 
             features["target"] = target
             data.append(features)
